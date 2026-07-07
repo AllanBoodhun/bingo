@@ -126,3 +126,4 @@ Claude Sonnet 5 (claude-sonnet-5)
 
 - 2026-07-07 : Implémentation complète (Tasks 1 à 4) — chargement des phrases existantes au montage ; re-vérification de la correction en place (déjà fonctionnelle depuis la Story 1.2) et de la restriction RLS. Statut passé à "review".
 - 2026-07-07 : Revue de code (Blind Hunter, Edge Case Hunter, Acceptance Auditor) — 3 patches appliqués (`.catch()` sur le chargement, réinitialisation de `chargement`/`phrases` par grille, action "Réessayer" en cas d'échec), 1 point différé. `npm run build`/`npm run lint` et vérification API revérifiés après correctifs. Statut passé à "done".
+- 2026-07-07 : Ajustement rétrospectif (correct-course) — la borne max de taille de grille passe de 8×8 à 5×5 (décision produit). Aucun changement de code dans cette story (elle ne touche pas la sélection de taille) ; noté ici pour traçabilité car la story référence la borne 3-8 dans son contexte.

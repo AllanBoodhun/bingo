@@ -14,7 +14,7 @@ type Phrase = {
   texte: string
 }
 
-const TAILLES = [3, 4, 5, 6, 7, 8]
+const TAILLES = [3, 4, 5]
 
 function friendlyErrorMessage(): string {
   return 'Un souci est survenu, réessaie dans un instant.'

@@ -129,7 +129,7 @@ Une seule famille dans tout le produit — **Georgia** (serif) — pour l'effet 
 - `{typography.display}` — titres d'écran (ex. "Nouvelle Grille").
 - `{typography.headline}` — titres de section, nom de partie.
 - `{typography.body}` — texte courant, phrases de grille en taille confortable (hors contrainte de maquette miniature).
-- `{typography.body-sm}` — texte dense (cases de petite grille 7x7/8x8).
+- `{typography.body-sm}` — texte dense (cases de petite grille 4x4/5x5).
 - `{typography.label-caps}` — étiquettes de champ, petites majuscules trackées.
 - `{typography.caption}` — texte auxiliaire, italique bienvenu pour la voix chaleureuse (ex. sous-titres d'écran).
 

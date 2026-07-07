@@ -19,7 +19,7 @@ This document provides the complete epic and story breakdown for bingo, decompos
 
 ### Functional Requirements
 
-FR-1: Le créateur peut créer une grille en choisissant une taille N×N (N entre 3 et 8) ; le nombre de phrases doit égaler N×N avant validation.
+FR-1: Le créateur peut créer une grille en choisissant une taille N×N (N entre 3 et 5) ; le nombre de phrases doit égaler N×N avant validation.
 FR-2: Le créateur donne un nom à chaque grille créée.
 FR-3: Le créateur peut modifier le texte d'une phrase à tout moment, y compris en partie ; la correction se répercute en temps réel sur tous les joueurs déjà distribués ; la position de la phrase dans les grilles déjà distribuées ne change pas.
 FR-4: Le créateur peut dupliquer une grille existante en une nouvelle grille modifiable indépendamment.
@@ -68,7 +68,7 @@ Modèle de données (ERD de la spine) : tables `grilles`, `phrases`, `parties`, 
 
 UX-DR1: Implémenter le design system "carnet de fête" (DESIGN.md) — tokens couleur (paper-bg, paper-card, ink, ink-soft, terracotta, mustard, sage, line), typographie Georgia seule sur toute l'échelle (display, headline, body, body-sm, label-caps, caption), échelle d'espacement et de rayons (`rounded`). Un seul thème clair en v1, pas de mode sombre.
 
-UX-DR2: Construire les composants sur mesure suivants (aucune librairie UI) : `grid-cell` (rotation aléatoire -1.2° à 1.2°, coins irréguliers par case, coche encre terracotta coin haut-droit, liseré moutarde en état "tension"), `cta-primary`, `cta-secondary`, `cta-close-game`, `live-badge` (pastille pointillée moutarde, point pulsant doux), `toast` (notification transitoire pointillée sauge), `banner-reminder` (persistante), `avatar-stack` (jusqu'à 3 avatars + compteur, rotation de couleurs par joueur), champ de phrase éditable en ligne, sélecteur de taille en chips (3×3 à 8×8).
+UX-DR2: Construire les composants sur mesure suivants (aucune librairie UI) : `grid-cell` (rotation aléatoire -1.2° à 1.2°, coins irréguliers par case, coche encre terracotta coin haut-droit, liseré moutarde en état "tension"), `cta-primary`, `cta-secondary`, `cta-close-game`, `live-badge` (pastille pointillée moutarde, point pulsant doux), `toast` (notification transitoire pointillée sauge), `banner-reminder` (persistante), `avatar-stack` (jusqu'à 3 avatars + compteur, rotation de couleurs par joueur), champ de phrase éditable en ligne, sélecteur de taille en chips (3×3 à 5×5).
 
 UX-DR3: Implémenter l'architecture de l'information à 5 surfaces sans barre d'onglets (navigation en pile) : Bibliothèque de grilles, Connexion/Compte, Création de grille, Rejoindre une partie, Grille en direct. Un invité cliquant un lien de partie atterrit directement sur "Grille en direct" sans jamais voir la Bibliothèque ni l'écran de connexion. "Vainqueur déclaré" est un état superposé de "Grille en direct", pas une surface séparée.
 
@@ -76,13 +76,13 @@ UX-DR4: Gérer explicitement chacun des états listés dans EXPERIENCE.md (§Sta
 
 UX-DR5: Respecter les primitives d'interaction : tap uniquement pour cocher/décocher (pas de long-press, pas de swipe) ; tap sur une phrase en création pour édition en place ; pas de pull-to-refresh. Interdits explicites : animations d'ouverture longues, spinners visibles sur actions courantes (cocher, rejoindre), confirmations modales sur actions réversibles.
 
-UX-DR6: Respecter le plancher d'accessibilité : cibles de tap ≥44px sur toutes les cases y compris en grille 8×8 ; l'état "coché" ne repose jamais sur la couleur seule (coche encre + position fixe comme signal primaire) ; l'annonce du vainqueur est un élément persistant à l'écran, jamais seulement transitoire ; l'ordre de focus/lecture suit l'ordre naturel de la grille malgré les rotations décoratives.
+UX-DR6: Respecter le plancher d'accessibilité : cibles de tap ≥44px sur toutes les cases y compris en grille 5×5 ; l'état "coché" ne repose jamais sur la couleur seule (coche encre + position fixe comme signal primaire) ; l'annonce du vainqueur est un élément persistant à l'écran, jamais seulement transitoire ; l'ordre de focus/lecture suit l'ordre naturel de la grille malgré les rotations décoratives.
 
 UX-DR7: Appliquer la voix et le ton définis (microcopie chaleureuse, tutoiement, phrases courtes ; ex. "Ta grille est prête !" plutôt que "Grille créée avec succès.") et utiliser les termes du glossaire produit (Grille, Partie, Case, Vainqueur, Joueur invité) tels quels, avec majuscule quand ils désignent l'entité produit.
 
 ### FR Coverage Map
 
-FR-1: Epic 1 - Création de grille (taille N×N, N entre 3 et 8)
+FR-1: Epic 1 - Création de grille (taille N×N, N entre 3 et 5)
 FR-2: Epic 1 - Nommage de grille
 FR-3: Epic 1 - Modification d'une phrase à tout moment, propagation temps réel
 FR-4: Epic 1 - Duplication de grille
@@ -147,7 +147,7 @@ So that je prépare un nouveau jeu à phrases personnalisées.
 **Acceptance Criteria:**
 
 **Given** je suis connecté
-**When** je choisis "Nouvelle grille", sélectionne une taille via les chips (3×3 à 8×8) et saisis un nom
+**When** je choisis "Nouvelle grille", sélectionne une taille via les chips (3×3 à 5×5) et saisis un nom
 **Then** une nouvelle grille est créée et associée à mon compte
 
 **Given** une grille en cours de création

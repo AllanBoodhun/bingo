@@ -42,7 +42,7 @@ bingo remplace le bingo papier à phrases personnalisées par un jeu multijoueur
 
 ## Constraints
 
-- Taille de grille N×N, N entre 3 et 8.
+- Taille de grille N×N, N entre 3 et 5.
 - Une partie accepte de 1 à 6 joueurs, créateur inclus — le solo est un chemin valide, pas un cas limite accidentel.
 - Le lien/code de partie est réutilisable — jamais un lien à usage unique.
 - La taille de grille est verrouillée après le lancement de la partie ; le texte des phrases reste modifiable à tout moment, y compris en partie.

@@ -76,10 +76,10 @@ C'est un projet personnel, pour le plaisir de jouer et de construire — pas une
 
 #### FR-1 : Création de grille
 
-Le créateur peut créer une grille en choisissant une taille NxN (ex : 3x3, 5x5, 6x6, jusqu'à 8x8). Réalise UJ-1.
+Le créateur peut créer une grille en choisissant une taille NxN (3x3, 4x4 ou 5x5). Réalise UJ-1.
 
 **Conséquences (testables) :**
-- La taille doit être un carré NxN, avec N compris entre 3 et 8.
+- La taille doit être un carré NxN, avec N compris entre 3 et 5.
 - Le nombre de phrases doit être égal à N×N avant que la grille puisse être validée.
 
 #### FR-2 : Nommage de grille

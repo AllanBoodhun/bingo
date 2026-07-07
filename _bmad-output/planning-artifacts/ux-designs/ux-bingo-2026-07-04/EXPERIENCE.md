@@ -55,7 +55,7 @@ Comportemental. Les specs visuelles vivent dans `DESIGN.md.Components`.
 | Case de grille (`grid-cell`) | Grille en direct | Tap pour cocher/décocher (FR-10). Pas de confirmation. Changement immédiat, pas d'animation longue. |
 | CTA principal (`cta-primary`) | Lancer la Partie, Rejoindre | Une seule action principale par écran, jamais deux CTA de même poids visuel côte à côte. |
 | Champ de phrase | Création de grille | Ligne éditable à tout moment, y compris après validation et pendant une partie en cours (FR-3) — pas de mode "lecture seule" post-validation. |
-| Sélecteur de taille (chips) | Création de grille | Chips 3×3 à 8×8 (FR-1). Changement de taille désactivé après lancement d'une partie (FR-5) — le chip devient non interactif, pas caché. |
+| Sélecteur de taille (chips) | Création de grille | Chips 3×3 à 5×5 (FR-1). Changement de taille désactivé après lancement d'une partie (FR-5) — le chip devient non interactif, pas caché. |
 | Badge "en direct" (`live-badge`) | Grille en direct | Visible en permanence pendant qu'une partie est active. Disparaît seulement à la clôture (FR-13). |
 | Pile d'avatars (`avatar-stack`) | Grille en direct | Affiche jusqu'à 3 joueurs + compteur (ex. "+3") — jamais plus de 6 au total, plafond de la Partie (FR-8). |
 | Notification transitoire (`toast`) | Grille en direct | Un événement à la fois ("X vient de cocher"), auto-disparition après quelques secondes. Ne bloque jamais l'interaction avec la grille. |
@@ -91,7 +91,7 @@ Comportemental. Les specs visuelles vivent dans `DESIGN.md.Components`.
 
 Comportemental. Le contraste visuel vit dans `DESIGN.md`.
 
-- Cibles de tap ≥ 44px sur toutes les cases de grille, y compris en grille 8×8 (la plus dense).
+- Cibles de tap ≥ 44px sur toutes les cases de grille, y compris en grille 5×5 (la plus dense).
 - L'état "coché" ne repose jamais sur la couleur seule : la coche encre (icône + position fixe) reste le signal primaire, cohérent avec le rejet du rond de couleur plein (§DESIGN.md Do's and Don'ts).
 - L'annonce du vainqueur (FR-12) est un élément persistant à l'écran, jamais seulement une notification transitoire qui pourrait être manquée.
 - Ordre de focus/lecture suit l'ordre naturel de la grille (gauche à droite, haut en bas) malgré les rotations visuelles décoratives — l'irrégularité de `DESIGN.md.Shapes` est purement visuelle, jamais dans l'ordre de tabulation.

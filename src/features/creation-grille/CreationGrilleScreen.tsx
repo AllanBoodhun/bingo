@@ -104,7 +104,7 @@ function NouvelleGrilleForm({ onCreated, onRetourBibliotheque }: NouvelleGrilleF
               disabled={pending}
               onClick={() => setTaille(n)}
             >
-              {n}×{n}
+              {n}×{n} - {n*n} phrases
             </button>
           ))}
         </div>

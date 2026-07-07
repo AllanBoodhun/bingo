@@ -48,12 +48,12 @@ tracking_system: file-system
 story_location: _bmad-output/implementation-artifacts
 
 development_status:
-  epic-1: in-progress
+  epic-1: done
   1-1-mise-en-place-du-projet-et-creation-de-compte: done
   1-2-creer-une-grille: done
   1-3-corriger-une-phrase-a-tout-moment: done
-  1-4-dupliquer-une-grille: backlog
-  1-5-consulter-sa-bibliotheque-de-grilles: backlog
+  1-4-dupliquer-une-grille: done
+  1-5-consulter-sa-bibliotheque-de-grilles: done
   epic-1-retrospective: optional
 
   epic-2: backlog

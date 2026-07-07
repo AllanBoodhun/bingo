@@ -20,3 +20,36 @@
   color: var(--color-ink-soft);
   font-style: italic;
 }
+
+.bibliotheque-screen__message {
+  font-size: var(--text-body-sm-size);
+  font-weight: var(--text-body-sm-weight);
+  color: var(--color-ink);
+}
+
+.grille-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.grille-list__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  font-size: var(--text-body-size);
+  color: var(--color-ink);
+  background: var(--color-paper-card);
+  border: 1.5px dashed var(--color-line);
+  border-radius: var(--radius-default);
+  padding: var(--space-2) var(--space-3);
+}
+
+.grille-list__nom {
+  text-align: left;
+}

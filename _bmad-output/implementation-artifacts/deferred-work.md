@@ -14,3 +14,14 @@
 ## Deferred from: code review of story-1-3-corriger-une-phrase-a-tout-moment (2026-07-07)
 
 - Pas d'annulation de la requête réseau elle-même pendant le chargement des phrases (seul son résultat est ignoré via le flag `ignore`) — `.abortSignal()` existe côté Supabase mais apporte peu de valeur pour ce projet à faible trafic.
+
+## Deferred from: code review of story-1-5-consulter-sa-bibliotheque-de-grilles (2026-07-07)
+
+- Pas de découpage (chunking) sur `.in('grille_id', ids)` pour une bibliothèque très volumineuse — cohérent avec SM-C1, improbable à l'échelle de ce projet.
+- Pas de garde anti-double-clic sur "Réessayer" dans `BibliothequeScreen.tsx` — pattern hérité tel quel de `ComposerPhrases` (Story 1.3).
+- Boutons "Nouvelle grille"/"Réessayer" non désactivés pendant la déconnexion — course de faible probabilité, impact limité.
+- Erreurs non loggées (pas de `console.error`/télémétrie) dans `BibliothequeScreen.tsx` — même pattern déjà différé dans les stories précédentes.
+
+## Deferred from: code review of story-1-4-dupliquer-une-grille (2026-07-07)
+
+- `handleDupliquer` n'a pas de garde `ignore` façon `charger()` — si le composant est démonté pendant l'opération, les `setState` qui suivent s'exécutent sur un composant démonté (sans effet en React 19, travail perdu mais pas de crash).

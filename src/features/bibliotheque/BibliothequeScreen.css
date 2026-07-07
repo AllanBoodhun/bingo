@@ -1,0 +1,22 @@
+.bibliotheque-screen {
+  max-width: 360px;
+  margin: 0 auto;
+  padding: var(--space-6) var(--space-screen-margin);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  text-align: center;
+}
+
+.bibliotheque-screen__title {
+  font-size: var(--text-display-size);
+  font-weight: var(--text-display-weight);
+  line-height: var(--text-display-line-height);
+  color: var(--color-terracotta);
+}
+
+.bibliotheque-screen__subtitle {
+  color: var(--color-ink-soft);
+  font-style: italic;
+}

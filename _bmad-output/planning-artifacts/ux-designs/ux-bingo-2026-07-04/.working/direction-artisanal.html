@@ -1,0 +1,193 @@
+<!--
+  DIRECTION: "Carnet de fête" — chaleureux fait-main
+  Rationale: Évoque un carnet de mariage bricolé à la main : papier crème, encre chaude, cases
+  légèrement de travers comme découpées aux ciseaux, coches façon feutre. Le ludique vient de
+  l'imperfection assumée (rotations subtiles, bords irréguliers) plutôt que de la couleur vive —
+  chaleureux et intime, adapté à un événement familial plutôt qu'à un jeu vidéo.
+-->
+<style>
+  /* ===== PALETTE — direction "Carnet de fête" =====
+     --paper-bg:     #F7EFDD  (fond kraft/crème)
+     --paper-card:   #FFFDF6  (carte papier clair)
+     --ink:          #4A3222  (encre brune)
+     --terracotta:   #C1502E  (accent chaud — coche/CTA)
+     --mustard:      #E8A33D  (accent secondaire — live/attention)
+     --sage:         #8A9A5B  (accent tertiaire — succès doux)
+     --line:         #DDD0B0  (bordures papier)
+  */
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body {
+    font-family: Georgia, "Times New Roman", -apple-system, serif;
+    background: #F7EFDD;
+    background-image: radial-gradient(#e6d8b8 1px, transparent 1px);
+    background-size: 14px 14px;
+    min-height:100vh; padding:40px 24px; color:#4A3222;
+  }
+  h1 { font-size:21px; font-weight:700; margin-bottom:4px; font-family: Georgia, serif; }
+  .sub { font-size:13px; color:#8a7256; margin-bottom:32px; font-style:italic; }
+  .row { display:flex; gap:44px; flex-wrap:wrap; align-items:flex-start; }
+  .col { display:flex; flex-direction:column; align-items:center; gap:14px; }
+  .col-label { font-weight:700; font-size:12px; text-transform:uppercase; letter-spacing:.05em; color:#C1502E; }
+
+  .phone {
+    width: 300px; background:#4A3222; border-radius:38px; padding:12px;
+    box-shadow: 0 18px 34px rgba(74,50,34,.28);
+    transform: rotate(-0.6deg);
+  }
+  .screen {
+    background:#F7EFDD; border-radius:26px; overflow:hidden; height:606px;
+    display:flex; flex-direction:column; position:relative;
+    box-shadow: inset 0 0 0 1px #DDD0B0;
+  }
+  .notch { width:104px; height:18px; background:#4A3222; border-radius:0 0 12px 12px; margin:0 auto; }
+  .statusbar { display:flex; justify-content:space-between; padding:8px 20px 2px; font-size:11px; font-weight:700; }
+  .urlbar {
+    margin: 6px 16px 8px; background:#FFFDF6; border:1.5px dashed #C1502E; border-radius:10px;
+    padding:6px 10px; font-size:10.5px; font-weight:600; color:#8a7256;
+  }
+
+  .headerbar { padding:6px 20px 4px; display:flex; justify-content:space-between; align-items:center; }
+  .game-title { font-size:17px; font-weight:700; }
+  .game-title .brand { color:#C1502E; }
+  .live-pill { display:flex; align-items:center; gap:5px; font-size:10.5px; font-weight:700; color:#8a7256; border:1.5px dashed #E8A33D; border-radius:999px; padding:3px 9px; }
+  .live-dot { width:6px;height:6px;border-radius:50%; background:#E8A33D; animation:pulse 1.4s infinite ease-in-out; }
+  @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:.35;} }
+
+  .players { padding:4px 20px 12px; font-size:11px; color:#8a7256; display:flex; align-items:center; gap:8px; }
+  .avatars { display:flex; }
+  .avatar { width:22px;height:22px;border-radius:50%; border:2px solid #F7EFDD; display:flex;align-items:center;justify-content:center; font-size:9px; font-weight:700; color:#fff; margin-left:-7px; }
+  .avatar:first-child{margin-left:0;}
+  .a1{background:#C1502E;} .a2{background:#8A9A5B;} .a3{background:#E8A33D; color:#4A3222;}
+
+  .grid { margin:0 16px; display:grid; grid-template-columns:repeat(5,1fr); gap:6px; flex:1; }
+  .cell {
+    background:#FFFDF6; border:1.5px solid #4A3222; font-size:8.3px; font-weight:600; line-height:1.15;
+    display:flex; align-items:center; justify-content:center; text-align:center; padding:4px; color:#4A3222;
+    position:relative;
+  }
+  .cell:nth-child(5n+1){ border-radius: 10px 14px 9px 15px; transform:rotate(-1.1deg); }
+  .cell:nth-child(5n+2){ border-radius: 14px 9px 15px 10px; transform:rotate(0.8deg); }
+  .cell:nth-child(5n+3){ border-radius: 9px 15px 10px 14px; transform:rotate(-0.5deg); }
+  .cell:nth-child(5n+4){ border-radius: 15px 10px 14px 9px; transform:rotate(1.2deg); }
+  .cell:nth-child(5n+5){ border-radius: 12px 12px 12px 12px; transform:rotate(-0.9deg); }
+  .cell.checked { background:#f4ead2; box-shadow: inset 0 0 0 2px #C1502E; }
+  .cell.checked::after {
+    content:""; position:absolute; inset:-4px;
+    border: 3px solid #C1502E; border-radius: 50%;
+    opacity:.9;
+  }
+  .cell.tension { box-shadow: inset 0 0 0 2px #E8A33D; }
+
+  .toast { margin:8px 16px 14px; padding:8px 12px; border:1.5px dashed #8A9A5B; border-radius:12px; font-size:10.5px; font-weight:600; color:#4A3222; background:#FFFDF6; transform:rotate(0.4deg); }
+
+  /* ===== SECONDARY SCREEN: Création de grille ===== */
+  .create-screen { padding:20px 20px 18px; height:100%; display:flex; flex-direction:column; }
+  .create-title { font-size:18px; font-weight:700; margin-bottom:2px; }
+  .create-sub { font-size:11.5px; color:#8a7256; font-style:italic; margin-bottom:16px; }
+  .field-label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:#C1502E; margin-bottom:8px; }
+  .phrase-list { display:flex; flex-direction:column; gap:7px; margin-bottom:18px; }
+  .phrase-row { display:flex; align-items:center; gap:8px; border:1.5px dashed #DDD0B0; border-radius:10px; padding:8px 10px; font-size:10.5px; background:#FFFDF6; }
+  .phrase-row:nth-child(odd){ transform: rotate(-0.4deg); }
+  .phrase-row:nth-child(even){ transform: rotate(0.4deg); }
+  .phrase-num { color:#8A9A5B; font-weight:700; font-size:10px; }
+  .size-row { display:flex; gap:6px; margin-bottom:20px; flex-wrap:wrap; }
+  .size-chip { border:1.5px dashed #DDD0B0; border-radius:10px; padding:6px 0; width:34px; text-align:center; font-size:11px; font-weight:700; color:#8a7256; background:#FFFDF6; }
+  .size-chip.active { background:#C1502E; border-color:#C1502E; color:#fff; border-style:solid; }
+  .create-cta { margin-top:auto; background:#C1502E; color:#FFFDF6; border:none; border-radius:14px 18px 14px 18px; padding:13px; font-size:13px; font-weight:700; box-shadow: 3px 3px 0 #4A3222; }
+  .create-hint { text-align:center; font-size:10px; color:#8a7256; margin-top:10px; font-style:italic; }
+</style>
+
+<h1>bingo — Direction "Carnet de fête" (chaleureux fait-main)</h1>
+<div class="sub">Papier crème, encre chaude, cases légèrement de travers — un carnet bricolé pour la fête.</div>
+
+<div class="row">
+
+  <div class="col">
+    <div class="col-label">Écran principal — Grille en direct</div>
+    <div class="phone">
+      <div class="screen">
+        <div class="notch"></div>
+        <div class="statusbar"><span>20:34</span><span>📶 🔋</span></div>
+        <div class="urlbar">✎ bingo.app/g/mariage-lea</div>
+        <div class="headerbar">
+          <div class="game-title"><span class="brand">bingo</span> · Grille de Léa</div>
+          <div class="live-pill"><span class="live-dot"></span>en direct</div>
+        </div>
+        <div class="players">
+          <div class="avatars"><div class="avatar a1">L</div><div class="avatar a2">K</div><div class="avatar a3">+8</div></div>
+          <span>10 joueurs sur cette Partie</span>
+        </div>
+
+        <div class="grid">
+          <div class="cell checked">Le père de la mariée va pleurer</div>
+          <div class="cell checked">Tonton Michel va chanter du Renaud</div>
+          <div class="cell checked">Quelqu'un fait tomber son verre</div>
+          <div class="cell checked">Le DJ joue une chanson des années 90</div>
+          <div class="cell tension">La mariée change de chaussures</div>
+
+          <div class="cell">Un discours dépasse 10 minutes</div>
+          <div class="cell">Le bouquet atterrit sur une table</div>
+          <div class="cell checked">Quelqu'un pleure de joie</div>
+          <div class="cell">Un enfant s'endort pendant le repas</div>
+          <div class="cell">Le marié perd sa cravate</div>
+
+          <div class="cell">Le gâteau manque de tomber</div>
+          <div class="cell checked">Deux invités dansent la macarena</div>
+          <div class="cell">Une photo de groupe rate</div>
+          <div class="cell">Chaussures identiques à la mariée</div>
+          <div class="cell">Le DJ fait une fausse note</div>
+
+          <div class="cell">Un discours arrache une larme</div>
+          <div class="cell">Les mariés s'embrassent trop longtemps</div>
+          <div class="cell">Un invité arrive en retard</div>
+          <div class="cell">Le témoin oublie son discours</div>
+          <div class="cell checked">Quelqu'un danse pieds nus</div>
+
+          <div class="cell">Une chaise casse sur la piste</div>
+          <div class="cell">Les grands-parents dansent ensemble</div>
+          <div class="cell checked">Un selfie de groupe rate</div>
+          <div class="cell">Le bouquet est relancé deux fois</div>
+          <div class="cell">La soirée se termine après minuit</div>
+        </div>
+
+        <div class="toast">✦ Karim vient de cocher une Case</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col">
+    <div class="col-label">Écran secondaire — Création de grille</div>
+    <div class="phone">
+      <div class="screen">
+        <div class="notch"></div>
+        <div class="create-screen">
+          <div class="create-title">Nouvelle Grille</div>
+          <div class="create-sub">écrite par Léa, pour la Partie de ce soir</div>
+
+          <div class="field-label">Phrases (5 / 25)</div>
+          <div class="phrase-list">
+            <div class="phrase-row"><span class="phrase-num">01</span>Le père de la mariée va pleurer</div>
+            <div class="phrase-row"><span class="phrase-num">02</span>Tonton Michel va chanter du Renaud</div>
+            <div class="phrase-row"><span class="phrase-num">03</span>Quelqu'un fait tomber son verre</div>
+            <div class="phrase-row"><span class="phrase-num">04</span>Le DJ joue une chanson des années 90</div>
+            <div class="phrase-row"><span class="phrase-num">05</span>La mariée change de chaussures</div>
+          </div>
+
+          <div class="field-label">Taille de la Grille</div>
+          <div class="size-row">
+            <div class="size-chip">3×3</div>
+            <div class="size-chip">4×4</div>
+            <div class="size-chip active">5×5</div>
+            <div class="size-chip">6×6</div>
+            <div class="size-chip">7×7</div>
+            <div class="size-chip">8×8</div>
+          </div>
+
+          <button class="create-cta">Lancer la Partie</button>
+          <div class="create-hint">Chaque Joueur invité reçoit une grille mélangée</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>

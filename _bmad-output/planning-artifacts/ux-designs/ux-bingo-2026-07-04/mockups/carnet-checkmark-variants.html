@@ -1,0 +1,136 @@
+<title>bingo — variantes de case cochée (Carnet de fête)</title>
+<style>
+  :root { color-scheme: light dark; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: Georgia, "Times New Roman", -apple-system, serif;
+    background: #F7EFDD;
+    background-image: radial-gradient(#e6d8b8 1px, transparent 1px);
+    background-size: 14px 14px;
+    color: #4A3222;
+    padding: 32px 20px 60px;
+  }
+  h1 { font-size: 20px; margin: 0 0 6px; }
+  p.lede { font-size: 13.5px; opacity: .75; margin: 0 0 28px; max-width: 620px; font-style: italic; }
+
+  .row { display: flex; gap: 28px; flex-wrap: wrap; }
+  .card { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .label { font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: #C1502E; text-align: center; max-width: 160px; }
+
+  .cell {
+    width: 160px;
+    height: 160px;
+    background: #FFFDF6;
+    border: 1.5px solid #4A3222;
+    border-radius: 12px 16px 10px 17px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 14px;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.3;
+    color: #4A3222;
+    position: relative;
+    transform: rotate(-0.8deg);
+  }
+
+  /* A — coche stylo (ink tick) */
+  .cell.tick { background: #f4ead2; }
+  .cell.tick::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(35deg, transparent 42%, #C1502E 42%, #C1502E 48%, transparent 48%),
+      linear-gradient(-52deg, transparent 60%, #C1502E 60%, #C1502E 66%, transparent 66%);
+    background-repeat: no-repeat;
+    background-size: 46% 46%, 30% 60%;
+    background-position: 55% 60%, 38% 42%;
+    opacity: .92;
+    pointer-events: none;
+  }
+
+  /* B — trait surligneur */
+  .cell.highlight span { position: relative; z-index: 1; }
+  .cell.highlight::before {
+    content: "";
+    position: absolute;
+    left: 12%;
+    right: 12%;
+    top: 46%;
+    height: 38%;
+    background: #E8A33D;
+    opacity: .45;
+    border-radius: 6px;
+    transform: rotate(-1.2deg);
+  }
+
+  /* C — tampon encre doux */
+  .cell.stamp { background: #f4ead2; }
+  .cell.stamp::after {
+    content: "vu !";
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    font-family: -apple-system, sans-serif;
+    font-weight: 800;
+    font-size: 11px;
+    letter-spacing: .03em;
+    color: #8A9A5B;
+    border: 2px solid #8A9A5B;
+    border-radius: 50% 48% 52% 46% / 52% 45% 55% 48%;
+    padding: 4px 10px;
+    transform: rotate(-9deg);
+    opacity: .85;
+  }
+
+  /* D — coin plié */
+  .cell.fold { background: #FFFDF6; overflow: hidden; }
+  .cell.fold::after {
+    content: "";
+    position: absolute;
+    top: 0; right: 0;
+    width: 0; height: 0;
+    border-style: solid;
+    border-width: 0 34px 34px 0;
+    border-color: transparent #C1502E transparent transparent;
+    box-shadow: -2px 2px 3px rgba(74,50,34,.25);
+  }
+  .cell.fold::before {
+    content: "✓";
+    position: absolute;
+    top: 4px; right: 4px;
+    color: #FFFDF6;
+    font-size: 12px;
+    font-weight: 900;
+  }
+
+  .hint { font-size: 12px; opacity: .6; margin-top: 30px; max-width: 600px; }
+</style>
+
+<h1>bingo — variantes pour "case cochée" (direction Carnet de fête)</h1>
+<p class="lede">Même carte, même texte réel — quatre façons de marquer qu'une case est cochée, sans le gros rond rouge plein.</p>
+
+<div class="row">
+  <div class="card">
+    <div class="cell tick">Tonton Michel va chanter du Renaud</div>
+    <div class="label">A — Coche au stylo</div>
+  </div>
+  <div class="card">
+    <div class="cell highlight"><span>Tonton Michel va chanter du Renaud</span></div>
+    <div class="label">B — Trait surligneur</div>
+  </div>
+  <div class="card">
+    <div class="cell stamp">Tonton Michel va chanter du Renaud</div>
+    <div class="label">C — Petit tampon "vu !"</div>
+  </div>
+  <div class="card">
+    <div class="cell fold">Tonton Michel va chanter du Renaud</div>
+    <div class="label">D — Coin plié</div>
+  </div>
+</div>
+
+<p class="hint">Toutes restent dans la palette et l'esprit "carnet fait main" — juste la façon de signaler l'état coché change. Dites-moi celle qui vous parle, ou combinez (ex: coin plié + coche au stylo).</p>

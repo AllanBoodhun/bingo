@@ -1,0 +1,205 @@
+<!--
+  DIRECTION: "Épure" — minimal éditorial
+  Rationale: "Simple" pris au pied de la lettre : typographie fine, beaucoup de blanc, une seule
+  couleur d'accent, micro-ombres discrètes. Le ludique n'est pas crié mais suggéré par un unique
+  point de couleur chaude (le point "live") et une coche nette qui s'anime en douceur — pensé pour
+  ne jamais distraire d'un événement réel qui se déroule sous les yeux du joueur.
+-->
+<style>
+  /* ===== PALETTE — direction "Épure" =====
+     --bg:           #FAFAF8  (fond papier)
+     --surface:      #FFFFFF  (cartes)
+     --line:         #E6E4DE  (bordures hairline)
+     --ink:          #1A1A1A  (texte primaire)
+     --ink-soft:     #767672  (texte secondaire)
+     --accent:       #2F6F5E  (accent unique — vert émeraude sourd)
+     --accent-soft:  #E4EEEA  (fond case cochée)
+     --warm:         #FFB100  (unique touche ludique — point live / focus)
+  */
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    background: #FAFAF8;
+    min-height:100vh;
+    padding: 40px 24px;
+    color:#1A1A1A;
+  }
+  h1 { font-size: 20px; font-weight: 600; letter-spacing:-.01em; margin-bottom:4px; }
+  .sub { font-size: 13px; color:#767672; margin-bottom: 32px; font-weight:400; }
+  .row { display:flex; gap:48px; flex-wrap:wrap; align-items:flex-start; }
+  .col { display:flex; flex-direction:column; align-items:center; gap:14px; }
+  .col-label { font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:.08em; color:#767672; }
+
+  .phone {
+    width: 296px;
+    background: #FFFFFF;
+    border: 1px solid #E6E4DE;
+    border-radius: 36px;
+    padding: 10px;
+    box-shadow: 0 2px 4px rgba(0,0,0,.02), 0 24px 48px rgba(0,0,0,.06);
+  }
+  .screen {
+    background: #FAFAF8;
+    border-radius: 28px;
+    overflow:hidden;
+    height: 600px;
+    display:flex; flex-direction:column;
+    position:relative;
+  }
+  .notch { width: 90px; height:16px; background:#1A1A1A; border-radius: 0 0 10px 10px; margin: 0 auto; opacity:.85; }
+  .statusbar { display:flex; justify-content:space-between; padding: 10px 22px 2px; font-size:11px; font-weight:500; color:#1A1A1A; }
+  .urlbar {
+    margin: 8px 18px 0;
+    background: #FFFFFF; border:1px solid #E6E4DE; border-radius:10px;
+    padding: 6px 10px; font-size:10.5px; color:#767672;
+    display:flex; align-items:center; gap:6px;
+  }
+
+  .headerbar { padding: 16px 22px 4px; display:flex; justify-content:space-between; align-items:baseline; }
+  .game-title { font-size:16px; font-weight:600; letter-spacing:-.01em; }
+  .game-title .brand { color:#2F6F5E; font-weight:700; }
+  .live-pill { display:flex; align-items:center; gap:5px; font-size:10.5px; font-weight:600; color:#767672; }
+  .live-dot { width:6px; height:6px; border-radius:50%; background:#FFB100; box-shadow:0 0 0 3px rgba(255,177,0,.18); animation: pulse 1.8s infinite ease-in-out; }
+  @keyframes pulse { 0%,100%{ box-shadow:0 0 0 3px rgba(255,177,0,.18);} 50%{ box-shadow:0 0 0 6px rgba(255,177,0,.06);} }
+
+  .players { padding: 6px 22px 14px; font-size:11px; color:#767672; display:flex; align-items:center; gap:8px; }
+  .avatars { display:flex; }
+  .avatar { width:20px; height:20px; border-radius:50%; border:1.5px solid #FAFAF8; display:flex;align-items:center;justify-content:center; font-size:8.5px; font-weight:700; color:#fff; margin-left:-6px; }
+  .avatar:first-child{margin-left:0;}
+  .a1{background:#2F6F5E;} .a2{background:#1A1A1A;} .a3{background:#B9B6AE; color:#1A1A1A;}
+
+  .grid {
+    margin: 0 18px; display:grid; grid-template-columns:repeat(5,1fr); gap:5px; flex:1;
+  }
+  .cell {
+    background:#FFFFFF; border:1px solid #E6E4DE; border-radius:8px;
+    font-size:8.2px; font-weight:500; line-height:1.2; color:#1A1A1A;
+    display:flex; align-items:center; justify-content:center; text-align:center; padding:4px;
+    transition: background .15s ease, border-color .15s ease;
+  }
+  .cell.checked {
+    background:#E4EEEA; border-color:#2F6F5E; color:#1D4E42; font-weight:600;
+    box-shadow: inset 0 0 0 1px #2F6F5E;
+  }
+  .cell.checked::before {
+    content:"✓"; position:absolute; margin-top:-24px; margin-left:24px;
+  }
+  .cell { position:relative; }
+  .cell.tension { border-color:#FFB100; border-width:1.5px; }
+
+  .toast {
+    margin: 10px 18px 16px; padding: 8px 12px;
+    border:1px solid #E6E4DE; border-radius:10px; font-size:10.5px; color:#1A1A1A;
+    display:flex; align-items:center; gap:6px; background:#fff;
+  }
+  .toast .dot { width:6px;height:6px;border-radius:50%; background:#FFB100; }
+
+  /* ===== SECONDARY SCREEN: Création de grille ===== */
+  .create-screen { padding: 22px 22px 20px; height:100%; display:flex; flex-direction:column; }
+  .create-title { font-size:17px; font-weight:600; margin-bottom:2px; }
+  .create-sub { font-size:11.5px; color:#767672; margin-bottom:18px; }
+  .field-label { font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:.06em; color:#767672; margin-bottom:8px; }
+  .phrase-list { display:flex; flex-direction:column; gap:6px; margin-bottom:20px; }
+  .phrase-row { display:flex; align-items:center; gap:8px; border:1px solid #E6E4DE; border-radius:8px; padding:8px 10px; font-size:10.5px; }
+  .phrase-num { color:#B9B6AE; font-weight:600; font-size:10px; }
+  .size-row { display:flex; gap:6px; margin-bottom:22px; flex-wrap:wrap; }
+  .size-chip { border:1px solid #E6E4DE; border-radius:8px; padding:6px 0; width:34px; text-align:center; font-size:11px; font-weight:600; color:#767672; }
+  .size-chip.active { background:#2F6F5E; border-color:#2F6F5E; color:#fff; }
+  .create-cta { margin-top:auto; background:#1A1A1A; color:#fff; border:none; border-radius:10px; padding:13px; font-size:13px; font-weight:600; letter-spacing:.01em; }
+  .create-hint { text-align:center; font-size:10px; color:#B9B6AE; margin-top:8px; }
+</style>
+
+<h1>bingo — Direction "Épure" (minimal éditorial)</h1>
+<div class="sub">Typographie fine, un seul accent de couleur, micro-interactions discrètes.</div>
+
+<div class="row">
+
+  <div class="col">
+    <div class="col-label">Écran principal — Grille en direct</div>
+    <div class="phone">
+      <div class="screen">
+        <div class="notch"></div>
+        <div class="statusbar"><span>20:34</span><span>Wi‑Fi · 82%</span></div>
+        <div class="urlbar">🔒 bingo.app/g/mariage-lea</div>
+        <div class="headerbar">
+          <div class="game-title"><span class="brand">bingo</span> · Grille de Léa</div>
+          <div class="live-pill"><span class="live-dot"></span>Direct</div>
+        </div>
+        <div class="players">
+          <div class="avatars"><div class="avatar a1">L</div><div class="avatar a2">K</div><div class="avatar a3">+8</div></div>
+          <span>10 joueurs sur cette Partie</span>
+        </div>
+
+        <div class="grid">
+          <div class="cell checked">Le père de la mariée va pleurer</div>
+          <div class="cell checked">Tonton Michel va chanter du Renaud</div>
+          <div class="cell checked">Quelqu'un fait tomber son verre</div>
+          <div class="cell checked">Le DJ joue une chanson des années 90</div>
+          <div class="cell tension">La mariée change de chaussures</div>
+
+          <div class="cell">Un discours dépasse 10 minutes</div>
+          <div class="cell">Le bouquet atterrit sur une table</div>
+          <div class="cell checked">Quelqu'un pleure de joie</div>
+          <div class="cell">Un enfant s'endort pendant le repas</div>
+          <div class="cell">Le marié perd sa cravate</div>
+
+          <div class="cell">Le gâteau manque de tomber</div>
+          <div class="cell checked">Deux invités dansent la macarena</div>
+          <div class="cell">Une photo de groupe rate</div>
+          <div class="cell">Chaussures identiques à la mariée</div>
+          <div class="cell">Le DJ fait une fausse note</div>
+
+          <div class="cell">Un discours arrache une larme</div>
+          <div class="cell">Les mariés s'embrassent trop longtemps</div>
+          <div class="cell">Un invité arrive en retard</div>
+          <div class="cell">Le témoin oublie son discours</div>
+          <div class="cell checked">Quelqu'un danse pieds nus</div>
+
+          <div class="cell">Une chaise casse sur la piste</div>
+          <div class="cell">Les grands-parents dansent ensemble</div>
+          <div class="cell checked">Un selfie de groupe rate</div>
+          <div class="cell">Le bouquet est relancé deux fois</div>
+          <div class="cell">La soirée se termine après minuit</div>
+        </div>
+
+        <div class="toast"><span class="dot"></span>Karim vient de cocher une Case</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col">
+    <div class="col-label">Écran secondaire — Création de grille</div>
+    <div class="phone">
+      <div class="screen">
+        <div class="notch"></div>
+        <div class="create-screen">
+          <div class="create-title">Nouvelle Grille</div>
+          <div class="create-sub">Léa · créatrice de la Partie</div>
+
+          <div class="field-label">Phrases (5 / 25)</div>
+          <div class="phrase-list">
+            <div class="phrase-row"><span class="phrase-num">01</span>Le père de la mariée va pleurer</div>
+            <div class="phrase-row"><span class="phrase-num">02</span>Tonton Michel va chanter du Renaud</div>
+            <div class="phrase-row"><span class="phrase-num">03</span>Quelqu'un fait tomber son verre</div>
+            <div class="phrase-row"><span class="phrase-num">04</span>Le DJ joue une chanson des années 90</div>
+            <div class="phrase-row"><span class="phrase-num">05</span>La mariée change de chaussures</div>
+          </div>
+
+          <div class="field-label">Taille de la Grille</div>
+          <div class="size-row">
+            <div class="size-chip">3×3</div>
+            <div class="size-chip">4×4</div>
+            <div class="size-chip active">5×5</div>
+            <div class="size-chip">6×6</div>
+            <div class="size-chip">7×7</div>
+            <div class="size-chip">8×8</div>
+          </div>
+
+          <button class="create-cta">Lancer la Partie</button>
+          <div class="create-hint">Un lien d'invitation sera généré</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>

@@ -1,0 +1,191 @@
+<!--
+  DIRECTION: "Piste de danse" — bold énergique / soirée
+  Rationale: Assume que le jeu se joue dans le noir d'une salle de réception, écran de téléphone
+  allumé au milieu d'une piste de danse : fond sombre, couleurs néon, ombres lumineuses, typographie
+  large et compacte façon panneau lumineux de fête foraine. Le "ludique" devient ici pulsation et
+  énergie plutôt que douceur — pensé pour rester lisible et excitant en pleine soirée.
+-->
+<style>
+  /* ===== PALETTE — direction "Piste de danse" =====
+     --bg:           #14121F  (fond nuit)
+     --surface:      #1F1B33  (carte sombre)
+     --line:         #322C4D  (bordures sombres)
+     --text:         #F5F3FF  (texte clair)
+     --text-soft:    #ADA6D6  (texte secondaire)
+     --pink:         #FF2E88  (néon primaire)
+     --lime:         #C6FF3D  (néon secondaire — succès/coché)
+     --blue:         #3DD9FF  (néon tertiaire — live/info)
+  */
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    background: #0D0B16;
+    min-height:100vh; padding:40px 24px; color:#F5F3FF;
+  }
+  h1 { font-size:21px; font-weight:800; margin-bottom:4px; letter-spacing:-.01em; }
+  .sub { font-size:13px; color:#ADA6D6; margin-bottom:32px; }
+  .row { display:flex; gap:44px; flex-wrap:wrap; align-items:flex-start; }
+  .col { display:flex; flex-direction:column; align-items:center; gap:14px; }
+  .col-label { font-weight:800; font-size:12px; text-transform:uppercase; letter-spacing:.08em; color:#3DD9FF; }
+
+  .phone {
+    width: 300px; background:#050409; border-radius:44px; padding:13px;
+    box-shadow: 0 0 0 1px #322C4D, 0 24px 60px rgba(255,46,136,.15), 0 24px 60px rgba(61,217,255,.08);
+  }
+  .screen {
+    background:#14121F; border-radius:32px; overflow:hidden; height:610px;
+    display:flex; flex-direction:column; position:relative;
+  }
+  .notch { width:110px; height:20px; background:#050409; border-radius:0 0 14px 14px; margin:0 auto; }
+  .statusbar { display:flex; justify-content:space-between; padding:8px 20px 4px; font-size:11px; font-weight:700; color:#ADA6D6; }
+  .urlbar {
+    margin:6px 16px 8px; background:#1F1B33; border:1px solid #322C4D; border-radius:999px;
+    padding:6px 12px; font-size:10.5px; font-weight:700; color:#3DD9FF;
+    box-shadow: 0 0 10px rgba(61,217,255,.25) inset;
+  }
+
+  .headerbar { padding:6px 20px 2px; display:flex; justify-content:space-between; align-items:center; }
+  .game-title { font-size:17px; font-weight:900; text-transform:uppercase; letter-spacing:.02em; }
+  .game-title .brand { color:#FF2E88; text-shadow: 0 0 10px rgba(255,46,136,.7); }
+  .live-pill {
+    display:flex; align-items:center; gap:6px; font-size:10.5px; font-weight:800;
+    background:#1F1B33; border:1px solid #FF2E88; border-radius:999px; padding:4px 10px; color:#FF2E88;
+    box-shadow: 0 0 12px rgba(255,46,136,.45);
+  }
+  .live-dot { width:7px;height:7px;border-radius:50%; background:#FF2E88; box-shadow:0 0 8px #FF2E88; animation:pulse 1s infinite ease-in-out; }
+  @keyframes pulse { 0%,100%{ opacity:1; transform:scale(1);} 50%{ opacity:.4; transform:scale(1.4);} }
+
+  .players { padding:8px 20px 12px; font-size:11px; color:#ADA6D6; display:flex; align-items:center; gap:8px; }
+  .avatars { display:flex; }
+  .avatar { width:22px;height:22px;border-radius:50%; border:2px solid #14121F; display:flex;align-items:center;justify-content:center; font-size:9px; font-weight:900; color:#14121F; margin-left:-7px; }
+  .avatar:first-child{margin-left:0;}
+  .a1{background:#FF2E88;} .a2{background:#3DD9FF;} .a3{background:#C6FF3D;}
+
+  .grid { margin:0 16px; display:grid; grid-template-columns:repeat(5,1fr); gap:6px; flex:1; }
+  .cell {
+    background:#1F1B33; border:1px solid #322C4D; border-radius:10px; font-size:8.4px; font-weight:700; line-height:1.15;
+    display:flex; align-items:center; justify-content:center; text-align:center; padding:4px; color:#D8D4F0;
+    position:relative;
+  }
+  .cell.checked {
+    background: #23331a; border-color:#C6FF3D; color:#DFFFA8;
+    box-shadow: 0 0 14px rgba(198,255,61,.5);
+  }
+  .cell.checked::after {
+    content:"✓"; position:absolute; top:2px; right:4px; font-size:9px; color:#C6FF3D; font-weight:900;
+  }
+  .cell.tension { border-color:#3DD9FF; box-shadow: 0 0 10px rgba(61,217,255,.4); }
+
+  .toast {
+    margin:8px 16px 14px; padding:9px 12px; border-radius:12px; font-size:10.5px; font-weight:800;
+    background: linear-gradient(90deg, #1F1B33, #26204a); border:1px solid #3DD9FF; color:#3DD9FF;
+    box-shadow: 0 0 14px rgba(61,217,255,.3);
+  }
+
+  /* ===== SECONDARY SCREEN: Vainqueur déclaré ===== */
+  .win-screen {
+    height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    padding:20px; text-align:center;
+    background: radial-gradient(circle at 50% 25%, #2a1440 0%, #14121F 65%, #0D0B16 100%);
+  }
+  .win-badge {
+    width:96px; height:96px; border-radius:26px; background:#1F1B33; border:2px solid #FF2E88;
+    display:flex; align-items:center; justify-content:center; font-size:42px; margin-bottom:20px;
+    box-shadow: 0 0 40px rgba(255,46,136,.55);
+    animation: glow 1.4s infinite alternate ease-in-out;
+  }
+  @keyframes glow { from{ box-shadow: 0 0 24px rgba(255,46,136,.4);} to{ box-shadow: 0 0 52px rgba(255,46,136,.85);} }
+  .win-title {
+    font-size:28px; font-weight:900; text-transform:uppercase; letter-spacing:.03em; margin-bottom:10px;
+    color:#fff; text-shadow: 0 0 18px rgba(198,255,61,.6);
+  }
+  .win-name { font-size:15px; font-weight:800; color:#14121F; background:#C6FF3D; padding:7px 18px; border-radius:999px; margin-bottom:14px; box-shadow:0 0 20px rgba(198,255,61,.5); }
+  .win-line { font-size:11.5px; font-weight:600; color:#ADA6D6; margin-bottom:22px; max-width:220px; }
+  .win-mini-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:5px; width:210px; }
+  .win-mini-cell { aspect-ratio:1; border-radius:6px; border:1px solid #322C4D; background:#1F1B33; }
+  .win-mini-cell.won { background:#23331a; border-color:#C6FF3D; box-shadow:0 0 10px rgba(198,255,61,.6); }
+  .win-cta { margin-top:24px; background:#FF2E88; color:#fff; font-weight:900; font-size:13px; padding:13px 24px; border-radius:12px; border:none; box-shadow:0 0 22px rgba(255,46,136,.6); text-transform:uppercase; letter-spacing:.03em; }
+</style>
+
+<h1>bingo — Direction "Piste de danse" (bold énergique)</h1>
+<div class="sub">Fond sombre, néons, ombres lumineuses — l'écran qui brille au milieu de la fête.</div>
+
+<div class="row">
+
+  <div class="col">
+    <div class="col-label">Écran principal — Grille en direct</div>
+    <div class="phone">
+      <div class="screen">
+        <div class="notch"></div>
+        <div class="statusbar"><span>20:34</span><span>📶 🔋</span></div>
+        <div class="urlbar">🔗 bingo.app/g/mariage-lea</div>
+        <div class="headerbar">
+          <div class="game-title"><span class="brand">bingo</span> · Léa</div>
+          <div class="live-pill"><span class="live-dot"></span>LIVE</div>
+        </div>
+        <div class="players">
+          <div class="avatars"><div class="avatar a1">L</div><div class="avatar a2">K</div><div class="avatar a3">+8</div></div>
+          <span>10 joueurs sur cette Partie</span>
+        </div>
+
+        <div class="grid">
+          <div class="cell checked">Le père de la mariée va pleurer</div>
+          <div class="cell checked">Tonton Michel va chanter du Renaud</div>
+          <div class="cell checked">Quelqu'un fait tomber son verre</div>
+          <div class="cell checked">Le DJ joue une chanson des années 90</div>
+          <div class="cell tension">La mariée change de chaussures</div>
+
+          <div class="cell">Un discours dépasse 10 minutes</div>
+          <div class="cell">Le bouquet atterrit sur une table</div>
+          <div class="cell checked">Quelqu'un pleure de joie</div>
+          <div class="cell">Un enfant s'endort pendant le repas</div>
+          <div class="cell">Le marié perd sa cravate</div>
+
+          <div class="cell">Le gâteau manque de tomber</div>
+          <div class="cell checked">Deux invités dansent la macarena</div>
+          <div class="cell">Une photo de groupe rate</div>
+          <div class="cell">Chaussures identiques à la mariée</div>
+          <div class="cell">Le DJ fait une fausse note</div>
+
+          <div class="cell">Un discours arrache une larme</div>
+          <div class="cell">Les mariés s'embrassent trop longtemps</div>
+          <div class="cell">Un invité arrive en retard</div>
+          <div class="cell">Le témoin oublie son discours</div>
+          <div class="cell checked">Quelqu'un danse pieds nus</div>
+
+          <div class="cell">Une chaise casse sur la piste</div>
+          <div class="cell">Les grands-parents dansent ensemble</div>
+          <div class="cell checked">Un selfie de groupe rate</div>
+          <div class="cell">Le bouquet est relancé deux fois</div>
+          <div class="cell">La soirée se termine après minuit</div>
+        </div>
+
+        <div class="toast">⚡ Karim vient de cocher une Case</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col">
+    <div class="col-label">Écran secondaire — Vainqueur déclaré</div>
+    <div class="phone">
+      <div class="screen">
+        <div class="notch"></div>
+        <div class="win-screen">
+          <div class="win-badge">🏆</div>
+          <div class="win-title">Vainqueur</div>
+          <div class="win-name">Karim — Joueur invité</div>
+          <div class="win-line">Ligne gagnante complétée en premier sur la Grille "mariage-lea"</div>
+          <div class="win-mini-grid">
+            <div class="win-mini-cell won"></div><div class="win-mini-cell won"></div><div class="win-mini-cell won"></div><div class="win-mini-cell won"></div><div class="win-mini-cell won"></div>
+            <div class="win-mini-cell"></div><div class="win-mini-cell"></div><div class="win-mini-cell"></div><div class="win-mini-cell"></div><div class="win-mini-cell"></div>
+            <div class="win-mini-cell"></div><div class="win-mini-cell"></div><div class="win-mini-cell"></div><div class="win-mini-cell"></div><div class="win-mini-cell"></div>
+            <div class="win-mini-cell"></div><div class="win-mini-cell"></div><div class="win-mini-cell"></div><div class="win-mini-cell"></div><div class="win-mini-cell"></div>
+            <div class="win-mini-cell"></div><div class="win-mini-cell"></div><div class="win-mini-cell"></div><div class="win-mini-cell"></div><div class="win-mini-cell"></div>
+          </div>
+          <button class="win-cta">Rejouer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>

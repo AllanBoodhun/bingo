@@ -27,15 +27,27 @@ export function AuthScreen() {
     setPending(true)
     setMessage(null)
 
-    const { error } =
-      mode === 'signup'
-        ? await supabase.auth.signUp({ email, password })
-        : await supabase.auth.signInWithPassword({ email, password })
+    try {
+      const trimmedEmail = email.trim()
 
-    if (error) {
-      setMessage(friendlyErrorMessage(error.message))
+      if (mode === 'signup') {
+        const { data, error } = await supabase.auth.signUp({ email: trimmedEmail, password })
+        if (error) {
+          setMessage(friendlyErrorMessage(error.message))
+        } else if (!data.session && (data.user?.identities?.length ?? 0) === 0) {
+          setMessage(friendlyErrorMessage('already registered'))
+        }
+      } else {
+        const { error } = await supabase.auth.signInWithPassword({ email: trimmedEmail, password })
+        if (error) {
+          setMessage(friendlyErrorMessage(error.message))
+        }
+      }
+    } catch {
+      setMessage(friendlyErrorMessage(''))
+    } finally {
+      setPending(false)
     }
-    setPending(false)
   }
 
   return (
@@ -83,6 +95,7 @@ export function AuthScreen() {
       <Button
         type="button"
         variant="secondary"
+        disabled={pending}
         onClick={() => {
           setMode(mode === 'signup' ? 'login' : 'signup')
           setMessage(null)

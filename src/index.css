@@ -34,3 +34,11 @@ h3 {
 button {
   font-family: var(--font-family);
 }
+
+.config-error {
+  max-width: 360px;
+  margin: var(--space-6) auto 0;
+  padding: 0 var(--space-screen-margin);
+  text-align: center;
+  color: var(--color-ink-soft);
+}

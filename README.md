@@ -1,32 +1,60 @@
-# React + TypeScript + Vite
+# bingo
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Bingo à phrases personnalisées, joué en temps réel entre proches pendant un événement partagé.
 
-Currently, two official plugins are available:
+Stack : React 19 + Vite + vite-plugin-pwa, Supabase (Postgres + Auth + Realtime) en local via Docker.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Tuto de lancement
 
-## React Compiler
+**Prérequis :** Node.js, Docker démarré.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+1. **Installer les dépendances**
 
-## Expanding the Oxlint configuration
+   ```bash
+   npm install
+   ```
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+2. **Configurer les variables d'environnement** (uniquement au tout premier lancement)
 
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
-```
+   ```bash
+   cp .env.example .env.local
+   ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+   `.env.local` doit contenir `VITE_SUPABASE_URL` et `VITE_SUPABASE_PUBLISHABLE_KEY`. Une fois Supabase démarré (étape suivante), récupère les vraies valeurs avec `make status` (champs `API_URL` et `PUBLISHABLE_KEY`) et colle-les dans `.env.local`.
+
+3. **Lancer le projet**
+
+   ```bash
+   make up
+   ```
+
+   Démarre l'instance Supabase locale (Docker) puis le serveur de dev Vite.
+
+4. **Ouvrir l'app**
+
+   http://localhost:5173 — tu arrives sur l'écran Connexion/Compte.
+
+5. **Se connecter**
+
+   Utilise le [compte de test](#compte-de-test) ci-dessous, ou crée un compte directement depuis l'écran (identifiant + mot de passe, 6 caractères minimum).
+
+6. **Arrêter le projet**
+
+   `Ctrl+C` pour stopper le serveur Vite, puis `make down` pour arrêter Supabase (facultatif — peut rester allumé entre deux sessions).
+
+Autres commandes : `make help` (liste tout), `make status`, `make build`, `make lint`, `make preview`, `make reset` (réinitialise la base locale).
+
+## Instance Supabase locale
+
+- API : http://127.0.0.1:64321
+- Studio (admin tables/auth) : http://127.0.0.1:64323
+- Mailpit (emails de test) : http://127.0.0.1:64324
+
+Ports remappés en `643xx` (voir `supabase/config.toml`).
+
+## Compte de test
+
+- Email : `admin@test.com`
+- Mot de passe : `pass123`
+
+Compte créé directement sur l'instance Supabase locale (pas de vérification d'email requise en local). À recréer si l'instance locale est réinitialisée (`supabase db reset`).

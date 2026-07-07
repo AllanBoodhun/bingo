@@ -4,7 +4,7 @@ baseline_commit: NO_VCS
 
 # Story 1.1: Mise en place du projet et création de compte
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -61,6 +61,28 @@ so that je peux sauvegarder mes grilles.
   - [x] Créer un compte depuis l'écran Connexion/Compte → utilisateur connecté et redirigé vers le stub Bibliothèque
   - [x] Se déconnecter, se reconnecter avec les mêmes identifiants → accès à la Bibliothèque
   - [x] Vérifier que le manifest PWA et le service worker sont générés (installabilité)
+
+### Review Findings
+
+**Patch:**
+
+- [x] [Review][Patch] `getSession()` sans gestion d'erreur réseau — si la promesse échoue, `loading` reste bloqué à `true` et l'app affiche `null` indéfiniment [src/App.tsx:12-15]
+- [x] [Review][Patch] Course possible entre `getSession()` initial et `onAuthStateChange` — une résolution tardive de `getSession()` peut écraser un état de session plus récent [src/App.tsx:12-23]
+- [x] [Review][Patch] Erreur d'initialisation Supabase (env manquantes ou URL malformée) non rattrapée — écran blanc sans message, aucune error boundary [src/lib/supabase/client.ts:6-10, src/main.tsx]
+- [x] [Review][Patch] `handleSubmit` sans `try/catch` — un rejet réseau (plutôt qu'un `{ error }` résolu) bloque `pending` à `true` indéfiniment, sans message [src/features/auth/AuthScreen.tsx:32-38]
+- [x] [Review][Patch] Bouton de bascule connexion/inscription non désactivé pendant une requête en cours — un changement de mode pendant l'attente peut faire atterrir la réponse sur le mauvais écran [src/features/auth/AuthScreen.tsx:79-88]
+- [x] [Review][Patch] Email non "trimé" avant envoi — un espace en début/fin de saisie provoque un échec de connexion avec message générique trompeur [src/features/auth/AuthScreen.tsx:56-57]
+- [x] [Review][Patch] `signOut()` appelé en fire-and-forget — pas de gestion d'erreur, pas de garde anti double-clic [src/features/bibliotheque/BibliothequeScreen.tsx:14]
+- [x] [Review][Patch] Inscription avec un email déjà enregistré ne renvoie aucune erreur exploitable — avec `enable_confirmations = false` (config Supabase locale), `signUp` sur un email existant répond sans `error` (comportement anti-énumération : utilisateur obfusqué, `identities: []`, pas de session), donc la branche "déjà enregistré" de `friendlyErrorMessage` n'est jamais atteinte et l'utilisateur ne voit rien se passer — viole AC2 [src/features/auth/AuthScreen.tsx:32-38]
+- [x] [Review][Patch] `<html lang="en">` sur un produit entièrement en français [index.html:2]
+
+**Deferred:**
+
+- [x] [Review][Defer] Messages d'erreur génériques sans trace de l'erreur réelle (`error.message`/`error.status` jamais loggés) — observabilité limitée en cas de souci en production [src/features/auth/AuthScreen.tsx] — deferred, pre-existing pattern, priorité basse
+
+**Dismissed:**
+
+- Pas de message de confirmation après inscription/connexion — écarté : la redirection immédiate vers la Bibliothèque (conforme à UX-DR5) est jugée suffisante comme signal de succès, pas de message supplémentaire nécessaire.
 
 ## Dev Notes
 
@@ -153,3 +175,4 @@ Claude Sonnet 5 (claude-sonnet-5)
 ## Change Log
 
 - 2026-07-06 : Implémentation complète (Tasks 1 à 6) — scaffolding React/Vite/PWA, connexion Supabase locale, design system, écran Connexion/Compte, stub Bibliothèque. Statut passé à "review".
+- 2026-07-07 : Revue de code (Blind Hunter, Edge Case Hunter, Acceptance Auditor) — 9 patches appliqués (gestion d'erreurs réseau sur `getSession`/`handleSubmit`/`signOut`, course `getSession`/`onAuthStateChange`, erreur de config Supabase non rattrapée, bouton de bascule non désactivé, email non trimé, inscription doublon silencieuse, `lang="en"`), 1 point différé (logging des erreurs brutes), 1 point écarté après décision (pas de message de succès dédié). `npm run build` revérifié après correctifs. Statut passé à "done".

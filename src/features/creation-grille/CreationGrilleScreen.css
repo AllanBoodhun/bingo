@@ -1,0 +1,115 @@
+.creation-grille-screen {
+  max-width: 360px;
+  margin: 0 auto;
+  padding: var(--space-6) var(--space-screen-margin);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.creation-grille-screen__title {
+  font-size: var(--text-display-size);
+  font-weight: var(--text-display-weight);
+  line-height: var(--text-display-line-height);
+  color: var(--color-terracotta);
+  text-align: center;
+}
+
+.creation-grille-screen__counter {
+  text-align: center;
+  font-size: var(--text-body-sm-size);
+  font-weight: var(--text-body-sm-weight);
+  color: var(--color-ink-soft);
+}
+
+.creation-grille-screen__complete {
+  text-align: center;
+  font-style: italic;
+  color: var(--color-sage);
+}
+
+.creation-grille-screen__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.creation-grille-screen__label {
+  font-size: var(--text-label-caps-size);
+  font-weight: var(--text-label-caps-weight);
+  letter-spacing: var(--text-label-caps-letter-spacing);
+  text-transform: uppercase;
+  color: var(--color-ink-soft);
+  margin-top: var(--space-2);
+}
+
+.creation-grille-screen__input {
+  font-family: var(--font-family);
+  font-size: var(--text-body-size);
+  color: var(--color-ink);
+  background: var(--color-paper-card);
+  border: 1.5px dashed var(--color-line);
+  border-radius: var(--radius-default);
+  padding: var(--space-2) var(--space-3);
+}
+
+.creation-grille-screen__message {
+  font-size: var(--text-body-sm-size);
+  font-weight: var(--text-body-sm-weight);
+  color: var(--color-ink);
+}
+
+.size-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.size-chip {
+  font-family: var(--font-family);
+  font-size: var(--text-body-sm-size);
+  font-weight: var(--text-body-sm-weight);
+  color: var(--color-ink);
+  background: transparent;
+  border: 1.5px dashed var(--color-line);
+  border-radius: var(--radius-lg);
+  padding: var(--space-2) var(--space-3);
+  cursor: pointer;
+}
+
+.size-chip--active {
+  background: var(--color-terracotta);
+  color: var(--color-paper-card);
+  border-style: solid;
+  border-color: var(--color-terracotta);
+}
+
+.size-chip:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.phrase-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.phrase-list__item {
+  font-size: var(--text-body-size);
+  color: var(--color-ink);
+  background: var(--color-paper-card);
+  border: 1.5px dashed var(--color-line);
+  border-radius: var(--radius-default);
+  padding: var(--space-2) var(--space-3);
+  cursor: pointer;
+}
+
+.phrase-list__item--editing {
+  padding: 0;
+  border: none;
+  background: transparent;
+}

@@ -74,7 +74,23 @@
       "Bash(git init *)",
       "Bash(git branch *)",
       "Bash(git add *)",
-      "Bash(git commit -m ' *)"
+      "Bash(git commit -m ' *)",
+      "Bash(find . -name \"project-context.md\" -not -path \"*/node_modules/*\")",
+      "Bash(cat _bmad/bmm/config.yaml)",
+      "Bash(xargs -I{} echo {})",
+      "Bash(command -v supabase)",
+      "Bash(supabase status *)",
+      "Bash(make -n up)",
+      "Bash(make status *)",
+      "Bash(PGPASSWORD=postgres psql *)",
+      "Bash(docker exec supabase_db_bmad *)",
+      "Bash(npx --yes playwright@1.61.1 install chromium --with-deps)",
+      "Bash(npx --yes playwright@1.61.1 install chromium)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:5173)",
+      "Bash(node verify-story-1-2.mjs)",
+      "Bash(apt-get install *)",
+      "Bash(sudo -n apt-get install -y libnspr4 libnss3 libatk1.0-0 libatk-bridge2.0-0 libcups2 libxkbcommon0 libatspi2.0-0 libxcomposite1 libxdamage1 libxfixes3 libxrandr2 libgbm1 libpango-1.0-0 libasound2)",
+      "Bash(docker cp *)"
     ]
   }
 }

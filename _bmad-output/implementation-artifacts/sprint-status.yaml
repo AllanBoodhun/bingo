@@ -51,7 +51,7 @@ development_status:
   epic-1: in-progress
   1-1-mise-en-place-du-projet-et-creation-de-compte: done
   1-2-creer-une-grille: done
-  1-3-corriger-une-phrase-a-tout-moment: backlog
+  1-3-corriger-une-phrase-a-tout-moment: done
   1-4-dupliquer-une-grille: backlog
   1-5-consulter-sa-bibliotheque-de-grilles: backlog
   epic-1-retrospective: optional

@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { supabase } from '../../lib/supabase/client'
 import { Button } from '../../components/Button'
 import './CreationGrilleScreen.css'
@@ -132,6 +132,9 @@ const TEXTE_MAX_LENGTH = 200
 
 function ComposerPhrases({ grille, onRetourBibliotheque }: ComposerPhrasesProps) {
   const [phrases, setPhrases] = useState<Phrase[]>([])
+  const [chargement, setChargement] = useState(true)
+  const [chargementEchoue, setChargementEchoue] = useState(false)
+  const [retry, setRetry] = useState(0)
   const [nouvellePhrase, setNouvellePhrase] = useState('')
   const [pending, setPending] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
@@ -140,6 +143,46 @@ function ComposerPhrases({ grille, onRetourBibliotheque }: ComposerPhrasesProps)
 
   const total = grille.taille * grille.taille
   const complete = phrases.length === total
+
+  useEffect(() => {
+    let ignore = false
+
+    setChargement(true)
+    setChargementEchoue(false)
+    setPhrases([])
+
+    async function charger() {
+      try {
+        const { data, error } = await supabase
+          .from('phrases')
+          .select('id, texte')
+          .eq('grille_id', grille.id)
+          .order('created_at')
+
+        if (ignore) return
+
+        if (error || !data) {
+          setChargementEchoue(true)
+        } else {
+          setPhrases(data)
+        }
+      } catch {
+        if (!ignore) {
+          setChargementEchoue(true)
+        }
+      } finally {
+        if (!ignore) {
+          setChargement(false)
+        }
+      }
+    }
+
+    charger()
+
+    return () => {
+      ignore = true
+    }
+  }, [grille.id, retry])
 
   async function handleAjouter(event: FormEvent) {
     event.preventDefault()
@@ -198,6 +241,24 @@ function ComposerPhrases({ grille, onRetourBibliotheque }: ComposerPhrasesProps)
     } finally {
       setPending(false)
     }
+  }
+
+  if (chargement) {
+    return null
+  }
+
+  if (chargementEchoue) {
+    return (
+      <main className="creation-grille-screen">
+        <p className="creation-grille-screen__message">{friendlyErrorMessage()}</p>
+        <Button type="button" variant="primary" onClick={() => setRetry((n) => n + 1)}>
+          Réessayer
+        </Button>
+        <Button type="button" variant="secondary" onClick={onRetourBibliotheque}>
+          Retour à la Bibliothèque
+        </Button>
+      </main>
+    )
   }
 
   return (

@@ -10,3 +10,7 @@
 - État `pending` partagé entre ajout et édition de phrase (pas de flags séparés par opération) — désynchronisation UI mineure possible en cas d'actions concurrentes.
 - Pas de région `aria-live` sur le compteur "X/N²" ni le message de complétion — amélioration accessibilité.
 - Pas de reprise d'une grille en cours de composition après navigation — dépend de la Bibliothèque (liste des grilles), Story 1.5.
+
+## Deferred from: code review of story-1-3-corriger-une-phrase-a-tout-moment (2026-07-07)
+
+- Pas d'annulation de la requête réseau elle-même pendant le chargement des phrases (seul son résultat est ignoré via le flag `ignore`) — `.abortSignal()` existe côté Supabase mais apporte peu de valeur pour ce projet à faible trafic.

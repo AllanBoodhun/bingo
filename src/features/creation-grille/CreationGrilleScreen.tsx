@@ -130,6 +130,14 @@ type ComposerPhrasesProps = {
 
 const TEXTE_MAX_LENGTH = 200
 
+type PartieLancee = {
+  lien: string
+}
+
+function construireLienPartie(codePartie: string): string {
+  return `${window.location.origin}?partie=${codePartie}`
+}
+
 function ComposerPhrases({ grille, onRetourBibliotheque }: ComposerPhrasesProps) {
   const [phrases, setPhrases] = useState<Phrase[]>([])
   const [chargement, setChargement] = useState(true)
@@ -140,6 +148,10 @@ function ComposerPhrases({ grille, onRetourBibliotheque }: ComposerPhrasesProps)
   const [message, setMessage] = useState<string | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editingTexte, setEditingTexte] = useState('')
+  const [lancementPending, setLancementPending] = useState(false)
+  const [lancementMessage, setLancementMessage] = useState<string | null>(null)
+  const [partieLancee, setPartieLancee] = useState<PartieLancee | null>(null)
+  const [lienCopie, setLienCopie] = useState(false)
 
   const total = grille.taille * grille.taille
   const complete = phrases.length === total
@@ -213,6 +225,40 @@ function ComposerPhrases({ grille, onRetourBibliotheque }: ComposerPhrasesProps)
     }
   }
 
+  async function handleLancerPartie() {
+    setLancementPending(true)
+    setLancementMessage(null)
+
+    try {
+      const { data, error } = await supabase
+        .from('parties')
+        .insert({ grille_id: grille.id })
+        .select()
+        .single()
+
+      if (error || !data) {
+        setLancementMessage(friendlyErrorMessage())
+        return
+      }
+
+      setPartieLancee({ lien: construireLienPartie(data.code_partie) })
+    } catch {
+      setLancementMessage(friendlyErrorMessage())
+    } finally {
+      setLancementPending(false)
+    }
+  }
+
+  async function handleCopierLien(lien: string) {
+    try {
+      await navigator.clipboard.writeText(lien)
+      setLienCopie(true)
+      setTimeout(() => setLienCopie(false), 2000)
+    } catch {
+      // Échec silencieux toléré : le lien reste affiché et copiable manuellement.
+    }
+  }
+
   function startEdit(phrase: Phrase) {
     setEditingId(phrase.id)
     setEditingTexte(phrase.texte)
@@ -269,6 +315,29 @@ function ComposerPhrases({ grille, onRetourBibliotheque }: ComposerPhrasesProps)
       </p>
       {complete && <p className="creation-grille-screen__complete">Ta grille est complète !</p>}
       {message && <p className="creation-grille-screen__message">{message}</p>}
+
+      {complete && !partieLancee && (
+        <>
+          {lancementMessage && <p className="creation-grille-screen__message">{lancementMessage}</p>}
+          <Button type="button" variant="primary" disabled={lancementPending} onClick={handleLancerPartie}>
+            Lancer la Partie
+          </Button>
+        </>
+      )}
+
+      {partieLancee && (
+        <div className="creation-grille-screen__partie">
+          <p className="creation-grille-screen__partie-titre">Ta partie est prête ! Partage ce lien :</p>
+          <p className="creation-grille-screen__lien">{partieLancee.lien}</p>
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => handleCopierLien(partieLancee.lien)}
+          >
+            {lienCopie ? 'Lien copié !' : 'Copier le lien'}
+          </Button>
+        </div>
+      )}
 
       <ul className="phrase-list">
         {phrases.map((phrase) =>

@@ -25,3 +25,14 @@
 ## Deferred from: code review of story-1-4-dupliquer-une-grille (2026-07-07)
 
 - `handleDupliquer` n'a pas de garde `ignore` façon `charger()` — si le composant est démonté pendant l'opération, les `setState` qui suivent s'exécutent sur un composant démonté (sans effet en React 19, travail perdu mais pas de crash).
+
+## Deferred from: code review of story-2-1-lancer-une-partie-et-obtenir-un-lien (2026-07-08)
+
+- La policy `select` sur `parties` ne couvre que le créateur — un futur Joueur/invité qui ouvre le lien partagé ne pourra pas relire l'état de la partie via cette policy seule ; explicitement à la charge de la Story 2.2.
+- Pas de garde `ignore` dans `handleLancerPartie`/`handleRelancer` contre un démontage du composant pendant l'appel réseau — même pattern déjà accepté pour `handleDupliquer` en Story 1.4.
+- Erreurs Supabase non loggées (`error` ignoré, seul un message générique est affiché) — pattern pré-existant déjà différé dans toutes les stories précédentes.
+- Collision d'unicité sur `code_partie` sans retry automatique côté client — probabilité négligeable sur 8 caractères hexadécimaux.
+- Double-clic sur "Copier le lien" dans la fenêtre de 2 secondes réinitialise prématurément l'état "Lien copié !" — cosmétique mineur.
+- Course théorique entre une modification de `taille` et un insert `parties` non encore commité dans une transaction concurrente — non atteignable via l'UI actuelle, risque négligeable à l'échelle de ce projet (SM-C1).
+- Pas de confirmation accessible (`aria-live`) pour l'action "Copier le lien" — même catégorie de dette d'accessibilité déjà différée ailleurs (Story 1.2).
+- Le panneau "partie lancée" n'a pas de bouton pour le fermer ou rappeler le lien une fois affiché — amélioration UX non requise par les AC de cette story.

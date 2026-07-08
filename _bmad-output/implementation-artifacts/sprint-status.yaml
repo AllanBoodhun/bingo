@@ -41,7 +41,7 @@
 # - Retrospective appends its action items to action_items; sprint-status surfaces open ones
 
 generated: 2026-07-04
-last_updated: 2026-07-07
+last_updated: 2026-07-08
 project: bingo
 project_key: NOKEY
 tracking_system: file-system
@@ -56,8 +56,8 @@ development_status:
   1-5-consulter-sa-bibliotheque-de-grilles: done
   epic-1-retrospective: optional
 
-  epic-2: backlog
-  2-1-lancer-une-partie-et-obtenir-un-lien: backlog
+  epic-2: in-progress
+  2-1-lancer-une-partie-et-obtenir-un-lien: done
   2-2-rejoindre-une-partie-et-recevoir-sa-grille-personnelle: backlog
   2-3-jouer-en-temps-reel-cocher-ses-cases-et-suivre-la-partie: backlog
   2-4-detecter-et-annoncer-les-vainqueurs: backlog

@@ -113,3 +113,27 @@
   border: none;
   background: transparent;
 }
+
+.creation-grille-screen__partie {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  background: var(--color-paper-card);
+  border: 1.5px dashed var(--color-sage);
+  border-radius: var(--radius-default);
+  padding: var(--space-3);
+  transform: rotate(0.4deg);
+}
+
+.creation-grille-screen__partie-titre {
+  font-size: var(--text-body-sm-size);
+  font-weight: var(--text-body-sm-weight);
+  color: var(--color-ink);
+}
+
+.creation-grille-screen__lien {
+  font-size: var(--text-body-size);
+  color: var(--color-ink-soft);
+  word-break: break-all;
+  user-select: all;
+}

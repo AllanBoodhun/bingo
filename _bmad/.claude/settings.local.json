@@ -90,7 +90,22 @@
       "Bash(node verify-story-1-2.mjs)",
       "Bash(apt-get install *)",
       "Bash(sudo -n apt-get install -y libnspr4 libnss3 libatk1.0-0 libatk-bridge2.0-0 libcups2 libxkbcommon0 libatspi2.0-0 libxcomposite1 libxdamage1 libxfixes3 libxrandr2 libgbm1 libpango-1.0-0 libasound2)",
-      "Bash(docker cp *)"
+      "Bash(docker cp *)",
+      "Bash(sudo -n service docker start)",
+      "Bash(systemctl status *)",
+      "Bash(sudo -l)",
+      "Bash(docker context *)",
+      "Read(//var/run/**)",
+      "Read(//etc/docker/**)",
+      "Bash(docker version *)",
+      "Bash(curl -s -X POST http://127.0.0.1:64321/auth/v1/token?grant_type=password -H 'apikey: sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH' -H 'Content-Type: application/json' -d '{\"email\":\"admin@test.com\",\"password\":\"pass123\"}')",
+      "Bash(curl -s 'http://127.0.0.1:64321/rest/v1/phrases?select=grille_id,texte&grille_id=in.\\(6e609cb5-5166-4d91-af7a-c35b2f2683fd,0c377247-9f06-48fd-be58-276dd0eb1f2a\\)' -H 'apikey: __TRACKED_VAR__' -H 'Authorization: Bearer __TRACKED_VAR__')",
+      "Bash(curl -s -X POST http://127.0.0.1:64321/rest/v1/parties -H 'apikey: __TRACKED_VAR__' -H 'Authorization: Bearer __TRACKED_VAR__' -H 'Content-Type: application/json' -H 'Prefer: return=representation' -d '{\"grille_id\":\"__TRACKED_VAR__\"}')",
+      "Bash(curl -s -w '\\\\nHTTP %{http_code}\\\\n' -X PATCH http://127.0.0.1:64321/rest/v1/grilles?id=eq.__TRACKED_VAR__ -H 'apikey: __TRACKED_VAR__' -H 'Authorization: Bearer __TRACKED_VAR__' -H 'Content-Type: application/json' -d '{\"taille\":4}')",
+      "Bash(curl -s -w '\\\\nHTTP %{http_code}\\\\n' -X PATCH http://127.0.0.1:64321/rest/v1/grilles?id=eq.__TRACKED_VAR__ -H 'apikey: __TRACKED_VAR__' -H 'Authorization: Bearer __TRACKED_VAR__' -H 'Content-Type: application/json' -H 'Prefer: return=representation' -d '{\"nom\":\"test \\(vérif story 2.1\\)\"}')",
+      "Bash(curl -s -w '\\\\nHTTP %{http_code}\\\\n' -X PATCH http://127.0.0.1:64321/rest/v1/grilles?id=eq.__TRACKED_VAR__ -H 'apikey: __TRACKED_VAR__' -H 'Authorization: Bearer __TRACKED_VAR__' -H 'Content-Type: application/json' -d '{\"nom\":\"test\"}')",
+      "Bash(curl -s http://127.0.0.1:64321/rest/v1/parties?select=id,grille_id,code_partie,statut -H 'apikey: __TRACKED_VAR__' -H 'Authorization: Bearer __TRACKED_VAR__')",
+      "Bash(docker exec *)"
     ]
   }
 }

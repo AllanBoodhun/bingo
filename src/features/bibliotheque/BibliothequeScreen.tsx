@@ -24,6 +24,10 @@ function nomDeLaCopie(nomSource: string): string {
   return `${nomSource.slice(0, NOM_MAX_LENGTH - suffixe.length)}${suffixe}`
 }
 
+function construireLienPartie(codePartie: string): string {
+  return `${window.location.origin}?partie=${codePartie}`
+}
+
 type BibliothequeScreenProps = {
   onNouvelleGrille: () => void
 }
@@ -36,6 +40,9 @@ export function BibliothequeScreen({ onNouvelleGrille }: BibliothequeScreenProps
   const [signingOut, setSigningOut] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [dupliquantIds, setDupliquantIds] = useState<Set<string>>(new Set())
+  const [lancementIds, setLancementIds] = useState<Set<string>>(new Set())
+  const [liensPartie, setLiensPartie] = useState<Record<string, string>>({})
+  const [liensCopies, setLiensCopies] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     let ignore = false
@@ -177,6 +184,50 @@ export function BibliothequeScreen({ onNouvelleGrille }: BibliothequeScreenProps
     }
   }
 
+  async function handleRelancer(grille: Grille) {
+    setLancementIds((current) => new Set(current).add(grille.id))
+    setMessage(null)
+
+    try {
+      const { data, error } = await supabase
+        .from('parties')
+        .insert({ grille_id: grille.id })
+        .select()
+        .single()
+
+      if (error || !data) {
+        setMessage(friendlyErrorMessage())
+        return
+      }
+
+      setLiensPartie((current) => ({ ...current, [grille.id]: construireLienPartie(data.code_partie) }))
+    } catch {
+      setMessage(friendlyErrorMessage())
+    } finally {
+      setLancementIds((current) => {
+        const next = new Set(current)
+        next.delete(grille.id)
+        return next
+      })
+    }
+  }
+
+  async function handleCopierLien(grilleId: string, lien: string) {
+    try {
+      await navigator.clipboard.writeText(lien)
+      setLiensCopies((current) => new Set(current).add(grilleId))
+      setTimeout(() => {
+        setLiensCopies((current) => {
+          const next = new Set(current)
+          next.delete(grilleId)
+          return next
+        })
+      }, 2000)
+    } catch {
+      // Échec silencieux toléré : le lien reste affiché et copiable manuellement.
+    }
+  }
+
   if (chargement) {
     return null
   }
@@ -202,17 +253,43 @@ export function BibliothequeScreen({ onNouvelleGrille }: BibliothequeScreenProps
         <ul className="grille-list">
           {grilles.map((grille) => (
             <li key={grille.id} className="grille-list__item">
-              <span className="grille-list__nom">{grille.nom}</span>
-              {grille.validee && (
-                <Button
-                  type="button"
-                  variant="secondary"
-                  aria-label={`Dupliquer ${grille.nom}`}
-                  disabled={dupliquantIds.has(grille.id)}
-                  onClick={() => handleDupliquer(grille)}
-                >
-                  Dupliquer
-                </Button>
+              <div className="grille-list__row">
+                <span className="grille-list__nom">{grille.nom}</span>
+                {grille.validee && (
+                  <div className="grille-list__actions">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      aria-label={`Relancer ${grille.nom}`}
+                      disabled={lancementIds.has(grille.id)}
+                      onClick={() => handleRelancer(grille)}
+                    >
+                      Relancer
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      aria-label={`Dupliquer ${grille.nom}`}
+                      disabled={dupliquantIds.has(grille.id)}
+                      onClick={() => handleDupliquer(grille)}
+                    >
+                      Dupliquer
+                    </Button>
+                  </div>
+                )}
+              </div>
+              {liensPartie[grille.id] && (
+                <div className="grille-list__partie">
+                  <p className="grille-list__partie-titre">Ta partie est prête ! Partage ce lien :</p>
+                  <p className="grille-list__lien">{liensPartie[grille.id]}</p>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => handleCopierLien(grille.id, liensPartie[grille.id])}
+                  >
+                    {liensCopies.has(grille.id) ? 'Lien copié !' : 'Copier le lien'}
+                  </Button>
+                </div>
               )}
             </li>
           ))}

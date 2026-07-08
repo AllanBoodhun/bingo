@@ -4,13 +4,26 @@ import { supabase, supabaseConfigError } from './lib/supabase/client'
 import { AuthScreen } from './features/auth/AuthScreen'
 import { BibliothequeScreen } from './features/bibliotheque/BibliothequeScreen'
 import { CreationGrilleScreen } from './features/creation-grille/CreationGrilleScreen'
+import { RejoindrePartieScreen } from './features/rejoindre-partie/RejoindrePartieScreen'
+import { GrilleEnDirecteScreen } from './features/grille-en-direct/GrilleEnDirecteScreen'
 
 type Ecran = 'bibliotheque' | 'creation-grille'
+
+type Joueur = {
+  id: string
+  pseudo: string
+}
+
+function lireCodePartieDepuisURL(): string | null {
+  return new URLSearchParams(window.location.search).get('partie')
+}
 
 function App() {
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
   const [ecran, setEcran] = useState<Ecran>('bibliotheque')
+  const [codePartieRejoint] = useState<string | null>(() => lireCodePartieDepuisURL())
+  const [joueurRejoint, setJoueurRejoint] = useState<Joueur | null>(null)
 
   useEffect(() => {
     if (supabaseConfigError) {
@@ -46,6 +59,14 @@ function App() {
 
   if (supabaseConfigError) {
     return <p className="config-error">{supabaseConfigError}</p>
+  }
+
+  if (codePartieRejoint !== null) {
+    return joueurRejoint ? (
+      <GrilleEnDirecteScreen joueur={joueurRejoint} />
+    ) : (
+      <RejoindrePartieScreen codePartie={codePartieRejoint} onRejoint={setJoueurRejoint} />
+    )
   }
 
   if (loading) {

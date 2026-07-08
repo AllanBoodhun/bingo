@@ -105,7 +105,11 @@
       "Bash(curl -s -w '\\\\nHTTP %{http_code}\\\\n' -X PATCH http://127.0.0.1:64321/rest/v1/grilles?id=eq.__TRACKED_VAR__ -H 'apikey: __TRACKED_VAR__' -H 'Authorization: Bearer __TRACKED_VAR__' -H 'Content-Type: application/json' -H 'Prefer: return=representation' -d '{\"nom\":\"test \\(vérif story 2.1\\)\"}')",
       "Bash(curl -s -w '\\\\nHTTP %{http_code}\\\\n' -X PATCH http://127.0.0.1:64321/rest/v1/grilles?id=eq.__TRACKED_VAR__ -H 'apikey: __TRACKED_VAR__' -H 'Authorization: Bearer __TRACKED_VAR__' -H 'Content-Type: application/json' -d '{\"nom\":\"test\"}')",
       "Bash(curl -s http://127.0.0.1:64321/rest/v1/parties?select=id,grille_id,code_partie,statut -H 'apikey: __TRACKED_VAR__' -H 'Authorization: Bearer __TRACKED_VAR__')",
-      "Bash(docker exec *)"
+      "Bash(docker exec *)",
+      "Bash(git -C /home/aboodhun/bmad/_bmad log --oneline --all)",
+      "Bash(echo \"EXIT CODE: $?\")",
+      "Bash(curl -s -X POST __TRACKED_VAR__/auth/v1/signup -H 'apikey: __TRACKED_VAR__' -H 'Content-Type: application/json' -d '{}')",
+      "Bash(echo \"EXIT: $?\")"
     ]
   }
 }

@@ -1,0 +1,59 @@
+.rejoindre-partie-screen {
+  max-width: 360px;
+  margin: 0 auto;
+  padding: var(--space-6) var(--space-screen-margin);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.rejoindre-partie-screen__title {
+  font-size: var(--text-display-size);
+  font-weight: var(--text-display-weight);
+  line-height: var(--text-display-line-height);
+  color: var(--color-terracotta);
+  text-align: center;
+}
+
+.rejoindre-partie-screen__subtitle {
+  text-align: center;
+  color: var(--color-ink-soft);
+  font-style: italic;
+  margin-bottom: var(--space-3);
+}
+
+.rejoindre-partie-screen__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.rejoindre-partie-screen__label {
+  font-size: var(--text-label-caps-size);
+  font-weight: var(--text-label-caps-weight);
+  letter-spacing: var(--text-label-caps-letter-spacing);
+  text-transform: uppercase;
+  color: var(--color-ink-soft);
+  margin-top: var(--space-2);
+}
+
+.rejoindre-partie-screen__input {
+  font-family: var(--font-family);
+  font-size: var(--text-body-size);
+  color: var(--color-ink);
+  background: var(--color-paper-card);
+  border: 1.5px dashed var(--color-line);
+  border-radius: var(--radius-default);
+  padding: var(--space-2) var(--space-3);
+}
+
+.rejoindre-partie-screen__message {
+  font-size: var(--text-body-sm-size);
+  font-weight: var(--text-body-sm-weight);
+  color: var(--color-ink);
+  text-align: center;
+}
+
+.rejoindre-partie-screen__form .cta-primary {
+  margin-top: var(--space-2);
+}

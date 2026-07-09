@@ -41,7 +41,7 @@
 # - Retrospective appends its action items to action_items; sprint-status surfaces open ones
 
 generated: 2026-07-04
-last_updated: 2026-07-08
+last_updated: 2026-07-09
 project: bingo
 project_key: NOKEY
 tracking_system: file-system
@@ -60,7 +60,7 @@ development_status:
   2-1-lancer-une-partie-et-obtenir-un-lien: done
   2-2-rejoindre-une-partie-et-recevoir-sa-grille-personnelle: done
   2-3-jouer-en-temps-reel-cocher-ses-cases-et-suivre-la-partie: done
-  2-4-detecter-et-annoncer-les-vainqueurs: backlog
+  2-4-detecter-et-annoncer-les-vainqueurs: done
   2-5-cloturer-la-partie-et-rappel-de-partie-en-cours: backlog
   2-6-reconnexion-apres-coupure-reseau: backlog
   2-7-pas-d-historique-pour-les-invites: backlog

@@ -150,3 +150,34 @@
   max-width: calc(100% - var(--space-screen-margin) * 2);
   text-align: center;
 }
+
+/* Aucun composant "vainqueur" n'est défini dans DESIGN.md — bordure pointillée
+   terracotta (accent primaire, réservé aux événements rares et importants),
+   plutôt que sage (déjà pris par le toast) ou moutarde (jamais cliquable). Pas
+   de minuteur d'auto-disparition (UX-DR6) : seule la fermeture manuelle masque
+   cet élément. */
+.vainqueur-overlay {
+  position: fixed;
+  left: 50%;
+  top: var(--space-5);
+  transform: translateX(-50%) rotate(0.4deg);
+  z-index: 1;
+  background: var(--color-paper-card);
+  border: 1.5px dashed var(--color-terracotta);
+  border-radius: var(--radius-default);
+  color: var(--color-ink);
+  padding: var(--space-3) var(--space-4);
+  max-width: calc(100% - var(--space-screen-margin) * 2);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.vainqueur-overlay__texte {
+  font-family: var(--font-family);
+  font-size: var(--text-headline-size);
+  font-weight: var(--text-headline-weight);
+  line-height: var(--text-headline-line-height);
+}

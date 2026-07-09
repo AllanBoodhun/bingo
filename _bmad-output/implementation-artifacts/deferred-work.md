@@ -36,3 +36,10 @@
 - Course théorique entre une modification de `taille` et un insert `parties` non encore commité dans une transaction concurrente — non atteignable via l'UI actuelle, risque négligeable à l'échelle de ce projet (SM-C1).
 - Pas de confirmation accessible (`aria-live`) pour l'action "Copier le lien" — même catégorie de dette d'accessibilité déjà différée ailleurs (Story 1.2).
 - Le panneau "partie lancée" n'a pas de bouton pour le fermer ou rappeler le lien une fois affiché — amélioration UX non requise par les AC de cette story.
+
+## Deferred from: code review of story-2-4-detecter-et-annoncer-les-vainqueurs (2026-07-09)
+
+- `select partie_id into v_partie_id from public.joueurs where id = new.joueur_id` (fonction `detecter_victoire`) n'a aucune garde si la ligne `joueurs` est introuvable — lèverait une exception `NOT NULL` sur l'`INSERT` suivant. Inatteignable actuellement (aucune fonctionnalité de suppression/départ de joueur n'existe) ; à réexaminer si une story future ajoute "quitter la partie" ou "exclure un joueur".
+- `v_cote` (`round(sqrt(count(*)))::int`) suppose un nombre de cases toujours carré parfait, sans garde côté serveur dans le trigger de détection de victoire — écart pré-existant (aucune contrainte DB ne force `count(phrases) = taille²` avant `lancer_partie`), le client s'en protège déjà (Story 2.3) mais pas ce nouveau trigger serveur.
+- Deux cases d'un même joueur cochées via deux `PATCH` quasi simultanés peuvent chacune s'exécuter sans voir l'`UPDATE` non commité de l'autre — si ce sont les deux dernières cases d'une ligne gagnante, la victoire n'est pas détectée à cet instant précis (se re-détecte automatiquement au prochain cochage de ce joueur). Risque de même catégorie que la course déjà acceptée sur les mises à jour optimistes concurrentes (Story 2.3, SM-C1).
+- Aucune région `aria-live`/`role="alert"` ni gestion de focus sur l'overlay "Vainqueur" — amélioration accessibilité au-delà du plancher explicite de cette story (UX-DR6 exige la persistance, pas la sémantique ARIA), même catégorie de dette déjà différée ailleurs (Stories 1.2, 2.1).

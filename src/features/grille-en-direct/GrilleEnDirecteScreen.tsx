@@ -23,6 +23,11 @@ type CaseJoueur = {
   phrases: { texte: string } | null
 }
 
+type Vainqueur = {
+  id: string
+  pseudo: string
+}
+
 function friendlyErrorMessage(): string {
   return 'Un souci est survenu, réessaie dans un instant.'
 }
@@ -41,6 +46,12 @@ export function GrilleEnDirecteScreen({ joueur }: GrilleEnDirecteScreenProps) {
   const [retry, setRetry] = useState(0)
   const [toast, setToast] = useState<string | null>(null)
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [vainqueurs, setVainqueurs] = useState<Vainqueur[]>([])
+  const [overlayFerme, setOverlayFerme] = useState(false)
+  // Miroir des ids déjà connus, à jour de façon synchrone (contrairement à `vainqueurs`,
+  // fermé sur sa valeur de montage dans le handler Realtime) : permet de distinguer un
+  // véritable nouveau vainqueur d'un événement redélivré, sans rouvrir l'overlay à tort.
+  const vainqueurIdsRef = useRef<Set<string>>(new Set())
 
   function afficherToast(message: string) {
     if (toastTimerRef.current) {
@@ -59,7 +70,7 @@ export function GrilleEnDirecteScreen({ joueur }: GrilleEnDirecteScreenProps) {
 
     async function charger() {
       try {
-        const [casesResult, joueursResult] = await Promise.all([
+        const [casesResult, joueursResult, vainqueursResult] = await Promise.all([
           supabase
             .from('cases')
             .select('id, position, checked, phrase_id, phrases(texte)')
@@ -70,12 +81,18 @@ export function GrilleEnDirecteScreen({ joueur }: GrilleEnDirecteScreenProps) {
             .select('id, pseudo')
             .eq('partie_id', joueur.partieId)
             .order('created_at'),
+          supabase
+            .from('parties_vainqueurs')
+            .select('joueur_id')
+            .eq('partie_id', joueur.partieId)
+            .order('declared_at'),
         ])
 
         if (ignore) return
 
         const { data: casesData, error: casesError } = casesResult
         const { data: joueursData, error: joueursError } = joueursResult
+        const { data: vainqueursData, error: vainqueursError } = vainqueursResult
 
         // Un résultat vide ou non carré ne peut arriver qu'en contournant l'UI (la grille
         // source n'était pas complète au lancement de la partie) — traité comme un échec
@@ -95,13 +112,24 @@ export function GrilleEnDirecteScreen({ joueur }: GrilleEnDirecteScreenProps) {
 
         const listeJoueurs = joueursError || !joueursData ? [] : joueursData
 
+        function resoudrePseudo(joueurId: string): string {
+          return listeJoueurs.find((j) => j.id === joueurId)?.pseudo ?? 'Un joueur'
+        }
+
+        const vainqueursInitiaux =
+          vainqueursError || !vainqueursData
+            ? []
+            : vainqueursData.map((v) => ({ id: v.joueur_id, pseudo: resoudrePseudo(v.joueur_id) }))
+
         setCases(casesData as unknown as CaseJoueur[])
         setJoueurs(listeJoueurs)
+        setVainqueurs(vainqueursInitiaux)
+        vainqueurIdsRef.current = new Set(vainqueursInitiaux.map((v) => v.id))
 
         // Fetch-then-subscribe : le canal Realtime n'ouvre qu'après le chargement initial
         // réussi (même discipline que celle qu'imposera AD-10 en Story 2.6). Un seul canal,
-        // deux écoutes (cases + phrases) — pas de filtre serveur par partie_id/grille_id :
-        // la policy select "Joueur lit les cases/phrases de sa partie" (Story 2.2) scope déjà
+        // trois écoutes (cases, phrases, parties_vainqueurs) — pas de filtre serveur par
+        // partie_id/grille_id : les policies select (Story 2.2, cette story) scopent déjà
         // la diffusion Realtime elle-même (AD-7), aucun filtre supplémentaire n'est nécessaire.
         channel = supabase
           .channel(`partie:${joueur.partieId}`)
@@ -115,8 +143,7 @@ export function GrilleEnDirecteScreen({ joueur }: GrilleEnDirecteScreenProps) {
               // Repli générique si le pseudo n'est pas dans l'instantané chargé au montage
               // (joueur arrivé après coup — `joueurs` n'est délibérément pas temps réel, AD-7) :
               // la notification reste affichée plutôt que d'être abandonnée en silence.
-              const pseudoAuteur = listeJoueurs.find((j) => j.id === nouvelleCase.joueur_id)?.pseudo
-              afficherToast(`${pseudoAuteur ?? 'Un joueur'} vient de cocher une Case.`)
+              afficherToast(`${resoudrePseudo(nouvelleCase.joueur_id)} vient de cocher une Case.`)
             },
           )
           .on(
@@ -131,6 +158,24 @@ export function GrilleEnDirecteScreen({ joueur }: GrilleEnDirecteScreenProps) {
                     : c,
                 ),
               )
+            },
+          )
+          .on(
+            'postgres_changes',
+            { event: 'INSERT', schema: 'public', table: 'parties_vainqueurs' },
+            (payload) => {
+              const nouveauVainqueur = payload.new as { joueur_id: string }
+              // Un vainqueur déjà connu (événement Realtime redélivré, ex. reconnexion
+              // brève) ne doit pas rouvrir un overlay que le joueur venait de fermer.
+              if (vainqueurIdsRef.current.has(nouveauVainqueur.joueur_id)) return
+              vainqueurIdsRef.current.add(nouveauVainqueur.joueur_id)
+              setVainqueurs((current) => [
+                ...current,
+                { id: nouveauVainqueur.joueur_id, pseudo: resoudrePseudo(nouveauVainqueur.joueur_id) },
+              ])
+              // Un joueur qui a fermé l'overlay pour un précédent vainqueur ne doit pas
+              // manquer l'annonce d'un co-vainqueur réellement nouveau (UX-DR6).
+              setOverlayFerme(false)
             },
           )
           .subscribe()
@@ -213,6 +258,10 @@ export function GrilleEnDirecteScreen({ joueur }: GrilleEnDirecteScreenProps) {
       </div>
 
       {toast && <p className="toast">{toast}</p>}
+
+      {vainqueurs.length > 0 && !overlayFerme && (
+        <VainqueurOverlay vainqueurs={vainqueurs} onFermer={() => setOverlayFerme(true)} />
+      )}
     </main>
   )
 }
@@ -280,6 +329,32 @@ function AvatarStack({ joueurs }: AvatarStackProps) {
         </span>
       ))}
       {reste > 0 && <span className="avatar-stack__compteur">+{reste}</span>}
+    </div>
+  )
+}
+
+function formatNomsVainqueurs(pseudos: string[]): string {
+  if (pseudos.length === 1) return pseudos[0]
+  return `${pseudos.slice(0, -1).join(', ')} et ${pseudos[pseudos.length - 1]}`
+}
+
+type VainqueurOverlayProps = {
+  vainqueurs: Vainqueur[]
+  onFermer: () => void
+}
+
+function VainqueurOverlay({ vainqueurs, onFermer }: VainqueurOverlayProps) {
+  const label = vainqueurs.length === 1 ? 'Vainqueur' : 'Vainqueurs'
+  const noms = formatNomsVainqueurs(vainqueurs.map((v) => v.pseudo))
+
+  return (
+    <div className="vainqueur-overlay">
+      <p className="vainqueur-overlay__texte">
+        {label} : {noms} 🎉
+      </p>
+      <Button type="button" variant="secondary" onClick={onFermer}>
+        Fermer
+      </Button>
     </div>
   )
 }

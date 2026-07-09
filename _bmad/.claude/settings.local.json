@@ -118,7 +118,14 @@
       "Bash(cp /tmp/claude-1000/-home-aboodhun-bmad--bmad/4ee7e4ca-2a67-4e4a-ba7b-429928bc917b/scratchpad/test-realtime-phrase.mjs ./__scratch_test_phrase.mjs)",
       "Bash(node ./__scratch_test_phrase.mjs)",
       "Bash(rm -f ./__scratch_test_phrase.mjs)",
-      "Bash(curl -s -X PATCH __TRACKED_VAR__/rest/v1/phrases?id=eq.__TRACKED_VAR__ -H 'apikey: __TRACKED_VAR__' -H 'Authorization: Bearer __TRACKED_VAR__' -H 'Content-Type: application/json' -H 'Prefer: return=representation' -d '{\"texte\": \"4\"}')"
+      "Bash(curl -s -X PATCH __TRACKED_VAR__/rest/v1/phrases?id=eq.__TRACKED_VAR__ -H 'apikey: __TRACKED_VAR__' -H 'Authorization: Bearer __TRACKED_VAR__' -H 'Content-Type: application/json' -H 'Prefer: return=representation' -d '{\"texte\": \"4\"}')",
+      "Bash(psql \"postgresql://postgres:postgres@127.0.0.1:64322/postgres\" -c \"select tablename from pg_publication_tables where pubname = 'supabase_realtime';\")",
+      "Bash(echo \"exit code: $?\")",
+      "Bash(ls node_modules/@supabase)",
+      "Bash(ls /home/aboodhun/bmad/src)",
+      "Bash(node verif-2-4-temp.mjs)",
+      "Bash(node *)",
+      "Bash(echo \"exit: $?\")"
     ]
   }
 }

@@ -59,7 +59,7 @@ development_status:
   epic-2: in-progress
   2-1-lancer-une-partie-et-obtenir-un-lien: done
   2-2-rejoindre-une-partie-et-recevoir-sa-grille-personnelle: done
-  2-3-jouer-en-temps-reel-cocher-ses-cases-et-suivre-la-partie: backlog
+  2-3-jouer-en-temps-reel-cocher-ses-cases-et-suivre-la-partie: done
   2-4-detecter-et-annoncer-les-vainqueurs: backlog
   2-5-cloturer-la-partie-et-rappel-de-partie-en-cours: backlog
   2-6-reconnexion-apres-coupure-reseau: backlog

@@ -12,6 +12,7 @@ type Ecran = 'bibliotheque' | 'creation-grille'
 type Joueur = {
   id: string
   pseudo: string
+  partieId: string
 }
 
 function lireCodePartieDepuisURL(): string | null {

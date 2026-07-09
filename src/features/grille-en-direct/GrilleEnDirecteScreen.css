@@ -26,6 +26,9 @@
 }
 
 .grid-cell {
+  appearance: none;
+  position: relative;
+  width: 100%;
   aspect-ratio: 1 / 1;
   min-height: 44px;
   background: var(--color-paper-card);
@@ -35,6 +38,8 @@
   justify-content: center;
   padding: var(--space-2);
   text-align: center;
+  font-family: inherit;
+  cursor: pointer;
 }
 
 .grid-cell__texte {
@@ -43,4 +48,105 @@
   font-weight: var(--text-body-sm-weight);
   line-height: var(--text-body-sm-line-height);
   color: var(--color-ink);
+}
+
+.grid-cell__coche {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  color: var(--color-terracotta);
+  font-weight: 700;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.grille-en-direct-screen__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.live-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  border: 1.5px dashed var(--color-mustard);
+  color: var(--color-ink-soft);
+  border-radius: var(--radius-full);
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--text-caption-size);
+  letter-spacing: var(--text-caption-letter-spacing);
+}
+
+.live-badge__point {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  background: var(--color-mustard);
+  animation: live-badge-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes live-badge-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.avatar-stack {
+  display: flex;
+  align-items: center;
+}
+
+.avatar-stack__avatar,
+.avatar-stack__compteur {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-full);
+  border: 2px solid var(--color-paper-bg);
+  color: var(--color-paper-card);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-caption-size);
+  font-weight: 700;
+  margin-left: -7px;
+}
+
+.avatar-stack__avatar:first-child {
+  margin-left: 0;
+}
+
+.avatar-stack__avatar--terracotta {
+  background: var(--color-terracotta);
+}
+
+.avatar-stack__avatar--sage {
+  background: var(--color-sage);
+}
+
+.avatar-stack__avatar--mustard {
+  background: var(--color-mustard);
+}
+
+.avatar-stack__compteur {
+  background: var(--color-ink-soft);
+}
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: var(--space-5);
+  transform: translateX(-50%) rotate(0.4deg);
+  background: var(--color-paper-card);
+  border: 1.5px dashed var(--color-sage);
+  border-radius: var(--radius-default);
+  color: var(--color-ink);
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--text-body-sm-size);
+  max-width: calc(100% - var(--space-screen-margin) * 2);
+  text-align: center;
 }

@@ -109,7 +109,16 @@
       "Bash(git -C /home/aboodhun/bmad/_bmad log --oneline --all)",
       "Bash(echo \"EXIT CODE: $?\")",
       "Bash(curl -s -X POST __TRACKED_VAR__/auth/v1/signup -H 'apikey: __TRACKED_VAR__' -H 'Content-Type: application/json' -d '{}')",
-      "Bash(echo \"EXIT: $?\")"
+      "Bash(echo \"EXIT: $?\")",
+      "Bash(node -e \"console.log\\(require\\('@supabase/supabase-js/package.json'\\).version\\)\")",
+      "Bash(node /tmp/claude-1000/-home-aboodhun-bmad--bmad/4ee7e4ca-2a67-4e4a-ba7b-429928bc917b/scratchpad/test-realtime.mjs)",
+      "Bash(cp /tmp/claude-1000/-home-aboodhun-bmad--bmad/4ee7e4ca-2a67-4e4a-ba7b-429928bc917b/scratchpad/test-realtime.mjs ./__scratch_test_realtime.mjs)",
+      "Bash(node ./__scratch_test_realtime.mjs)",
+      "Bash(rm -f ./__scratch_test_realtime.mjs)",
+      "Bash(cp /tmp/claude-1000/-home-aboodhun-bmad--bmad/4ee7e4ca-2a67-4e4a-ba7b-429928bc917b/scratchpad/test-realtime-phrase.mjs ./__scratch_test_phrase.mjs)",
+      "Bash(node ./__scratch_test_phrase.mjs)",
+      "Bash(rm -f ./__scratch_test_phrase.mjs)",
+      "Bash(curl -s -X PATCH __TRACKED_VAR__/rest/v1/phrases?id=eq.__TRACKED_VAR__ -H 'apikey: __TRACKED_VAR__' -H 'Authorization: Bearer __TRACKED_VAR__' -H 'Content-Type: application/json' -H 'Prefer: return=representation' -d '{\"texte\": \"4\"}')"
     ]
   }
 }

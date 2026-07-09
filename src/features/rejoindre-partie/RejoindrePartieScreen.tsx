@@ -6,6 +6,7 @@ import './RejoindrePartieScreen.css'
 type Joueur = {
   id: string
   pseudo: string
+  partieId: string
 }
 
 type EtatTerminal = 'introuvable' | 'complete' | null
@@ -61,7 +62,7 @@ export function RejoindrePartieScreen({ codePartie, onRejoint }: RejoindrePartie
         return
       }
 
-      onRejoint({ id: data.id, pseudo: data.pseudo })
+      onRejoint({ id: data.id, pseudo: data.pseudo, partieId: data.partie_id })
     } catch {
       setMessage(friendlyErrorMessage())
     } finally {

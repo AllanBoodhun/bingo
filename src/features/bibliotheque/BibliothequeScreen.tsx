@@ -10,6 +10,12 @@ type Grille = {
   validee: boolean
 }
 
+type PartieEnAttente = {
+  id: string
+  nom: string
+  lien: string
+}
+
 function friendlyErrorMessage(): string {
   return 'Un souci est survenu, réessaie dans un instant.'
 }
@@ -43,6 +49,7 @@ export function BibliothequeScreen({ onNouvelleGrille }: BibliothequeScreenProps
   const [lancementIds, setLancementIds] = useState<Set<string>>(new Set())
   const [liensPartie, setLiensPartie] = useState<Record<string, string>>({})
   const [liensCopies, setLiensCopies] = useState<Set<string>>(new Set())
+  const [partiesEnAttente, setPartiesEnAttente] = useState<PartieEnAttente[]>([])
 
   useEffect(() => {
     let ignore = false
@@ -51,6 +58,7 @@ export function BibliothequeScreen({ onNouvelleGrille }: BibliothequeScreenProps
     setChargementEchoue(false)
     setGrilles([])
     setMessage(null)
+    setPartiesEnAttente([])
 
     async function charger() {
       try {
@@ -97,6 +105,39 @@ export function BibliothequeScreen({ onNouvelleGrille }: BibliothequeScreenProps
             validee: (comptesParGrille.get(g.id) ?? 0) === g.taille * g.taille,
           })),
         )
+
+        // Rappel de partie en cours (FR-14) : chargement séquentiel supplémentaire,
+        // dégradation silencieuse en cas d'échec (pas de bannière), jamais un blocage
+        // de tout l'écran — même principe que les requêtes secondaires de
+        // GrilleEnDirecteScreen. Filtre explicite par compte_id requis (revue de code) :
+        // les policies RLS s'additionnent par OR, la policy "Joueur lit les vainqueurs de
+        // sa partie" (Story 2.4) reste active en plus de la nouvelle policy créateur —
+        // sans ce filtre, un joueur non-créateur ayant rejoint la partie d'un ami avec
+        // son propre compte verrait aussi cette bannière dans sa propre Bibliothèque.
+        const {
+          data: { user },
+        } = await supabase.auth.getUser()
+        const { data: rappelsData, error: rappelsError } = await supabase
+          .from('parties_vainqueurs')
+          .select('parties!inner(id, code_partie, statut, grilles!inner(nom, compte_id))')
+          .eq('parties.statut', 'en_cours')
+          .eq('parties.grilles.compte_id', user?.id ?? '')
+
+        if (ignore) return
+
+        if (!rappelsError && rappelsData) {
+          // Dédupliqué par partie.id : une partie à plusieurs co-vainqueurs (Story 2.4)
+          // produit une ligne parties_vainqueurs par vainqueur, la bannière ne doit
+          // lister chaque partie en attente qu'une seule fois.
+          const dedup = new Map<string, PartieEnAttente>()
+          for (const row of rappelsData as unknown as Array<{
+            parties: { id: string; code_partie: string; grilles: { nom: string } }
+          }>) {
+            const { id, code_partie, grilles: g } = row.parties
+            dedup.set(id, { id, nom: g.nom, lien: construireLienPartie(code_partie) })
+          }
+          setPartiesEnAttente([...dedup.values()])
+        }
       } catch {
         if (!ignore) {
           setChargementEchoue(true)
@@ -247,6 +288,8 @@ export function BibliothequeScreen({ onNouvelleGrille }: BibliothequeScreenProps
     <main className="bibliotheque-screen">
       <h1 className="bibliotheque-screen__title">Bibliothèque</h1>
 
+      {partiesEnAttente.length > 0 && <RappelPartieEnCours parties={partiesEnAttente} />}
+
       {grilles.length === 0 ? (
         <p className="bibliotheque-screen__subtitle">Crée ta première grille pour commencer !</p>
       ) : (
@@ -305,5 +348,25 @@ export function BibliothequeScreen({ onNouvelleGrille }: BibliothequeScreenProps
         Me déconnecter
       </Button>
     </main>
+  )
+}
+
+type RappelPartieEnCoursProps = {
+  parties: PartieEnAttente[]
+}
+
+function RappelPartieEnCours({ parties }: RappelPartieEnCoursProps) {
+  return (
+    <div className="bibliotheque-screen__rappel">
+      <p className="bibliotheque-screen__rappel-titre">
+        Une Partie est toujours en cours — tu veux la clôturer ?
+      </p>
+      {parties.map((partie) => (
+        <div key={partie.id} className="bibliotheque-screen__rappel-item">
+          <span className="grille-list__nom">{partie.nom}</span>
+          <p className="grille-list__lien">{partie.lien}</p>
+        </div>
+      ))}
+    </div>
   )
 }

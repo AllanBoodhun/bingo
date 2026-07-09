@@ -125,7 +125,8 @@
       "Bash(ls /home/aboodhun/bmad/src)",
       "Bash(node verif-2-4-temp.mjs)",
       "Bash(node *)",
-      "Bash(echo \"exit: $?\")"
+      "Bash(echo \"exit: $?\")",
+      "Bash(echo \"lint exit: $?\")"
     ]
   }
 }

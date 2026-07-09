@@ -28,6 +28,8 @@ type Vainqueur = {
   pseudo: string
 }
 
+type StatutPartie = 'en_cours' | 'terminee'
+
 function friendlyErrorMessage(): string {
   return 'Un souci est survenu, réessaie dans un instant.'
 }
@@ -52,6 +54,9 @@ export function GrilleEnDirecteScreen({ joueur }: GrilleEnDirecteScreenProps) {
   // fermé sur sa valeur de montage dans le handler Realtime) : permet de distinguer un
   // véritable nouveau vainqueur d'un événement redélivré, sans rouvrir l'overlay à tort.
   const vainqueurIdsRef = useRef<Set<string>>(new Set())
+  const [statutPartie, setStatutPartie] = useState<StatutPartie>('en_cours')
+  const [estCreateur, setEstCreateur] = useState(false)
+  const [clotureEnCours, setClotureEnCours] = useState(false)
 
   function afficherToast(message: string) {
     if (toastTimerRef.current) {
@@ -64,13 +69,27 @@ export function GrilleEnDirecteScreen({ joueur }: GrilleEnDirecteScreenProps) {
   useEffect(() => {
     let ignore = false
     let channel: RealtimeChannel | undefined
+    let chargeEnCours = false
 
-    setChargement(true)
-    setChargementEchoue(false)
+    async function charger(silencieux: boolean) {
+      if (chargeEnCours) return
+      chargeEnCours = true
 
-    async function charger() {
+      // Un canal existant devenu obsolète après une coupure ne doit pas rester ouvert
+      // en parallèle du nouveau (doublons d'événements, fuite de ressources) — le
+      // retirer avant tout nouveau fetch, jamais après.
+      if (channel) {
+        supabase.removeChannel(channel)
+        channel = undefined
+      }
+
+      if (!silencieux) {
+        setChargement(true)
+        setChargementEchoue(false)
+      }
+
       try {
-        const [casesResult, joueursResult, vainqueursResult] = await Promise.all([
+        const [casesResult, joueursResult, vainqueursResult, partieResult] = await Promise.all([
           supabase
             .from('cases')
             .select('id, position, checked, phrase_id, phrases(texte)')
@@ -86,6 +105,7 @@ export function GrilleEnDirecteScreen({ joueur }: GrilleEnDirecteScreenProps) {
             .select('joueur_id')
             .eq('partie_id', joueur.partieId)
             .order('declared_at'),
+          supabase.from('parties').select('grille_id, statut').eq('id', joueur.partieId).single(),
         ])
 
         if (ignore) return
@@ -93,6 +113,7 @@ export function GrilleEnDirecteScreen({ joueur }: GrilleEnDirecteScreenProps) {
         const { data: casesData, error: casesError } = casesResult
         const { data: joueursData, error: joueursError } = joueursResult
         const { data: vainqueursData, error: vainqueursError } = vainqueursResult
+        const { data: partieData, error: partieError } = partieResult
 
         // Un résultat vide ou non carré ne peut arriver qu'en contournant l'UI (la grille
         // source n'était pas complète au lancement de la partie) — traité comme un échec
@@ -106,7 +127,13 @@ export function GrilleEnDirecteScreen({ joueur }: GrilleEnDirecteScreenProps) {
           casesData.length === 0 ||
           !Number.isInteger(Math.sqrt(casesData.length))
         ) {
-          setChargementEchoue(true)
+          // Un rechargement silencieux (reconnexion) ne doit jamais faire apparaître
+          // l'écran d'erreur — un casesError transitoire (ex. jeton en cours de
+          // rafraîchissement juste après une coupure) ne signifie pas forcément une
+          // vraie corruption de données ; l'utilisateur garde son dernier état connu.
+          if (!silencieux) {
+            setChargementEchoue(true)
+          }
           return
         }
 
@@ -124,13 +151,48 @@ export function GrilleEnDirecteScreen({ joueur }: GrilleEnDirecteScreenProps) {
         setCases(casesData as unknown as CaseJoueur[])
         setJoueurs(listeJoueurs)
         setVainqueurs(vainqueursInitiaux)
+        // Un vainqueur apparu pendant une coupure (Realtime ne rejoue jamais les
+        // événements manqués) doit rouvrir l'overlay s'il avait été fermé pour un
+        // vainqueur précédent — sans quoi son annonce serait silencieusement perdue
+        // (EXPERIENCE.md : "vainqueur déjà annoncé" fait partie de l'état à restaurer).
+        // Au tout premier montage, vainqueurIdsRef est vide donc tout vainqueur compte
+        // comme "nouveau" — sans effet visible puisque overlayFerme vaut déjà false.
+        const idsAvant = vainqueurIdsRef.current
+        const aDeNouveauxVainqueurs = vainqueursInitiaux.some((v) => !idsAvant.has(v.id))
         vainqueurIdsRef.current = new Set(vainqueursInitiaux.map((v) => v.id))
+        if (aDeNouveauxVainqueurs) {
+          setOverlayFerme(false)
+        }
+        setStatutPartie(partieError || !partieData ? 'en_cours' : partieData.statut)
+        setChargementEchoue(false)
 
-        // Fetch-then-subscribe : le canal Realtime n'ouvre qu'après le chargement initial
-        // réussi (même discipline que celle qu'imposera AD-10 en Story 2.6). Un seul canal,
-        // trois écoutes (cases, phrases, parties_vainqueurs) — pas de filtre serveur par
-        // partie_id/grille_id : les policies select (Story 2.2, cette story) scopent déjà
-        // la diffusion Realtime elle-même (AD-7), aucun filtre supplémentaire n'est nécessaire.
+        // "Suis-je le créateur ?" : sous-produit direct de la policy select existante sur
+        // grilles ("Créateur lit ses grilles", Story 1.2) — RLS renvoie une ligne si le
+        // compte courant possède cette grille, null sinon. Aucune nouvelle policy/fonction
+        // nécessaire. Séquentiel (dépend de grille_id ci-dessus), n'échoue jamais l'écran :
+        // un échec réseau se traduit juste par l'absence du CTA de clôture (défaut sûr).
+        if (!ignore && !partieError && partieData) {
+          const { data: grilleData } = await supabase
+            .from('grilles')
+            .select('id')
+            .eq('id', partieData.grille_id)
+            .maybeSingle()
+          if (!ignore) {
+            setEstCreateur(Boolean(grilleData))
+          }
+        }
+
+        // Le composant a pu se démonter (ou l'effet se relancer) pendant l'await
+        // ci-dessus — sans cette garde, un canal serait créé et assigné après que le
+        // nettoyage de l'effet a déjà tourné, fuite de connexion Realtime jamais retirée.
+        if (ignore) return
+
+        // Fetch-then-subscribe (AD-10) : le canal Realtime n'ouvre qu'après le chargement
+        // complet réussi, à chaque appel de charger() — montage initial comme reconnexion
+        // silencieuse (Story 2.6). Un seul canal, quatre écoutes — pas de filtre serveur par
+        // partie_id/grille_id : les policies select scopent déjà la diffusion Realtime
+        // elle-même (AD-7), un filtre applicatif reste nécessaire pour les cas où la RLS
+        // couvre plusieurs parties d'un même utilisateur (voir gardes ci-dessous, Story 2.5).
         channel = supabase
           .channel(`partie:${joueur.partieId}`)
           .on(
@@ -164,7 +226,12 @@ export function GrilleEnDirecteScreen({ joueur }: GrilleEnDirecteScreenProps) {
             'postgres_changes',
             { event: 'INSERT', schema: 'public', table: 'parties_vainqueurs' },
             (payload) => {
-              const nouveauVainqueur = payload.new as { joueur_id: string }
+              const nouveauVainqueur = payload.new as { joueur_id: string; partie_id: string }
+              // Un créateur ayant plusieurs parties actives (ex. "Relancer") est, via la
+              // policy "Créateur lit les vainqueurs de ses parties", abonné aux vainqueurs
+              // de TOUTES ses parties — ignorer tout événement qui ne concerne pas celle
+              // affichée à cet écran (revue de code, régression introduite par cette policy).
+              if (nouveauVainqueur.partie_id !== joueur.partieId) return
               // Un vainqueur déjà connu (événement Realtime redélivré, ex. reconnexion
               // brève) ne doit pas rouvrir un overlay que le joueur venait de fermer.
               if (vainqueurIdsRef.current.has(nouveauVainqueur.joueur_id)) return
@@ -178,22 +245,58 @@ export function GrilleEnDirecteScreen({ joueur }: GrilleEnDirecteScreenProps) {
               setOverlayFerme(false)
             },
           )
+          .on(
+            'postgres_changes',
+            { event: 'UPDATE', schema: 'public', table: 'parties' },
+            (payload) => {
+              const partieMaj = payload.new as { id: string; statut: StatutPartie }
+              // La policy "Créateur lit ses parties" scope la visibilité à TOUTES les
+              // parties du créateur, pas seulement celle-ci — un créateur multi-parties
+              // (ex. "Relancer") recevrait sinon le statut de la mauvaise partie.
+              if (partieMaj.id !== joueur.partieId) return
+              setStatutPartie(partieMaj.statut)
+            },
+          )
           .subscribe()
       } catch {
-        if (!ignore) {
+        // Un échec silencieux (reconnexion automatique) ne doit jamais faire
+        // apparaître l'écran d'erreur — l'utilisateur garde son dernier état connu,
+        // un prochain événement de reconnexion réessaiera (AC #2).
+        if (!ignore && !silencieux) {
           setChargementEchoue(true)
         }
       } finally {
+        chargeEnCours = false
         if (!ignore) {
           setChargement(false)
         }
       }
     }
 
-    charger()
+    charger(false)
+
+    // Reconnexion (AC #1 à #3) : rejoue le cycle fetch-then-subscribe silencieusement
+    // dès que le réseau revient, ou dès que l'app redevient visible (téléphone
+    // déverrouillé) — ce second signal couvre le cas le plus fréquent pour ce projet
+    // mobile-first (NFR-2) : une mise en veille suspend généralement la connexion
+    // WebSocket sans jamais faire basculer navigator.onLine à false. Volontairement
+    // pas de 3e signal basé sur le statut du canal Realtime lui-même (redondant, cf.
+    // Dev Notes de cette story).
+    function handleReconnexion() {
+      charger(true)
+    }
+    function handleVisibilityChange() {
+      if (document.visibilityState === 'visible') {
+        charger(true)
+      }
+    }
+    window.addEventListener('online', handleReconnexion)
+    document.addEventListener('visibilitychange', handleVisibilityChange)
 
     return () => {
       ignore = true
+      window.removeEventListener('online', handleReconnexion)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
       if (channel) {
         supabase.removeChannel(channel)
       }
@@ -222,6 +325,31 @@ export function GrilleEnDirecteScreen({ joueur }: GrilleEnDirecteScreenProps) {
     }
   }
 
+  async function handleCloturer() {
+    setClotureEnCours(true)
+    try {
+      // `.select()` force la représentation de la ligne modifiée : même piège que
+      // `handleToggle` (Story 2.3) — un update filtré en silence par RLS renverrait
+      // sinon un succès sans erreur, sans que la clôture n'ait réellement eu lieu.
+      const { data, error } = await supabase
+        .from('parties')
+        .update({ statut: 'terminee' })
+        .eq('id', joueur.partieId)
+        .select()
+
+      if (error || !data || data.length === 0) {
+        afficherToast(friendlyErrorMessage())
+        return
+      }
+
+      setStatutPartie('terminee')
+    } catch {
+      afficherToast(friendlyErrorMessage())
+    } finally {
+      setClotureEnCours(false)
+    }
+  }
+
   const cote = useMemo(() => Math.sqrt(cases.length), [cases.length])
 
   if (chargement) {
@@ -239,10 +367,12 @@ export function GrilleEnDirecteScreen({ joueur }: GrilleEnDirecteScreenProps) {
     )
   }
 
+  const estTerminee = statutPartie === 'terminee'
+
   return (
     <main className="grille-en-direct-screen">
       <div className="grille-en-direct-screen__header">
-        <LiveBadge />
+        {estTerminee ? <PartieTermineeBadge /> : <LiveBadge />}
         <AvatarStack joueurs={joueurs} />
       </div>
 
@@ -253,7 +383,7 @@ export function GrilleEnDirecteScreen({ joueur }: GrilleEnDirecteScreenProps) {
         style={{ gridTemplateColumns: `repeat(${cote}, 1fr)` }}
       >
         {cases.map((caseItem) => (
-          <GridCell key={caseItem.id} caseItem={caseItem} onToggle={handleToggle} />
+          <GridCell key={caseItem.id} caseItem={caseItem} onToggle={handleToggle} disabled={estTerminee} />
         ))}
       </div>
 
@@ -262,6 +392,12 @@ export function GrilleEnDirecteScreen({ joueur }: GrilleEnDirecteScreenProps) {
       {vainqueurs.length > 0 && !overlayFerme && (
         <VainqueurOverlay vainqueurs={vainqueurs} onFermer={() => setOverlayFerme(true)} />
       )}
+
+      {estCreateur && !estTerminee && (
+        <Button type="button" variant="close-game" disabled={clotureEnCours} onClick={handleCloturer}>
+          Clôturer la Partie
+        </Button>
+      )}
     </main>
   )
 }
@@ -269,9 +405,10 @@ export function GrilleEnDirecteScreen({ joueur }: GrilleEnDirecteScreenProps) {
 type GridCellProps = {
   caseItem: CaseJoueur
   onToggle: (caseItem: CaseJoueur) => void
+  disabled: boolean
 }
 
-function GridCell({ caseItem, onToggle }: GridCellProps) {
+function GridCell({ caseItem, onToggle, disabled }: GridCellProps) {
   // Rotation et rayons de coin calculés une seule fois par case (DESIGN.md §Shapes) :
   // ne jamais recalculer à chaque rendu, sinon les cases tremblent visuellement.
   // Deps vide assumé : ce composant est monté avec `key={caseItem.id}` par son parent,
@@ -291,12 +428,17 @@ function GridCell({ caseItem, onToggle }: GridCellProps) {
       className="grid-cell"
       style={style}
       aria-pressed={caseItem.checked}
+      disabled={disabled}
       onClick={() => onToggle(caseItem)}
     >
       <span className="grid-cell__texte">{caseItem.phrases?.texte}</span>
       {caseItem.checked && <span className="grid-cell__coche">✓</span>}
     </button>
   )
+}
+
+function PartieTermineeBadge() {
+  return <span className="partie-terminee-badge">Partie terminée</span>
 }
 
 function LiveBadge() {

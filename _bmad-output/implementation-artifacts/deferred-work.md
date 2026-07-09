@@ -43,3 +43,13 @@
 - `v_cote` (`round(sqrt(count(*)))::int`) suppose un nombre de cases toujours carré parfait, sans garde côté serveur dans le trigger de détection de victoire — écart pré-existant (aucune contrainte DB ne force `count(phrases) = taille²` avant `lancer_partie`), le client s'en protège déjà (Story 2.3) mais pas ce nouveau trigger serveur.
 - Deux cases d'un même joueur cochées via deux `PATCH` quasi simultanés peuvent chacune s'exécuter sans voir l'`UPDATE` non commité de l'autre — si ce sont les deux dernières cases d'une ligne gagnante, la victoire n'est pas détectée à cet instant précis (se re-détecte automatiquement au prochain cochage de ce joueur). Risque de même catégorie que la course déjà acceptée sur les mises à jour optimistes concurrentes (Story 2.3, SM-C1).
 - Aucune région `aria-live`/`role="alert"` ni gestion de focus sur l'overlay "Vainqueur" — amélioration accessibilité au-delà du plancher explicite de cette story (UX-DR6 exige la persistance, pas la sémantique ARIA), même catégorie de dette déjà différée ailleurs (Stories 1.2, 2.1).
+
+## Deferred from: code review of story-2-5-cloturer-la-partie-et-rappel-de-partie-en-cours (2026-07-09)
+
+- La policy `update` sur `parties.statut` ne restreint que la propriété de la ligne, jamais la valeur/le sens de la transition — un créateur pourrait via un appel API direct repasser une partie `terminee` à `en_cours`. Cohérent avec la posture déjà acceptée du projet ("Protection anti-abus au-delà des défauts Supabase — délibérément non traité") ; la valeur reste bornée par le type enum Postgres, pas une chaîne arbitraire.
+- `.single()` sur le chargement de `parties` dans `GrilleEnDirecteScreen.tsx` traite un `partieId` inexistant de façon identique au défaut `'en_cours'` plutôt que comme un état d'erreur distinct — inatteignable actuellement (aucune fonctionnalité de suppression de partie/grille n'existe).
+- Aucun `aria-disabled`/libellé accessible n'annonce pourquoi la grille a cessé de répondre une fois la partie clôturée — amélioration accessibilité au-delà du plancher explicite de cette story, même catégorie déjà différée en Story 2.4.
+
+## Deferred from: code review of story-2-7-pas-d-historique-pour-les-invites (2026-07-10)
+
+- Aucun message contextuel n'explique à un invité pourquoi il atterrit sur l'écran de connexion/création de compte après la fin d'une partie — amélioration UX potentielle, non exigée par un AC ou un `UX-DR` de ce projet.

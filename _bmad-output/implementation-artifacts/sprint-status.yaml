@@ -61,8 +61,8 @@ development_status:
   2-2-rejoindre-une-partie-et-recevoir-sa-grille-personnelle: done
   2-3-jouer-en-temps-reel-cocher-ses-cases-et-suivre-la-partie: done
   2-4-detecter-et-annoncer-les-vainqueurs: done
-  2-5-cloturer-la-partie-et-rappel-de-partie-en-cours: backlog
-  2-6-reconnexion-apres-coupure-reseau: backlog
-  2-7-pas-d-historique-pour-les-invites: backlog
+  2-5-cloturer-la-partie-et-rappel-de-partie-en-cours: done
+  2-6-reconnexion-apres-coupure-reseau: done
+  2-7-pas-d-historique-pour-les-invites: done
   2-8-jouer-seul-sans-inviter-personne: backlog
   epic-2-retrospective: optional

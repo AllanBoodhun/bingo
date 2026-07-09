@@ -42,6 +42,11 @@
   cursor: pointer;
 }
 
+.grid-cell:disabled {
+  cursor: default;
+  opacity: 0.85;
+}
+
 .grid-cell__texte {
   font-family: var(--font-family);
   font-size: var(--text-body-sm-size);
@@ -94,6 +99,21 @@
   50% {
     opacity: 0.35;
   }
+}
+
+/* Aucun composant dédié dans DESIGN.md pour l'état "terminé" (même lacune que
+   l'overlay de vainqueur, Story 2.4) — même forme de pastille que .live-badge,
+   mais en ink-soft/line plutôt que moutarde : la moutarde est réservée à l'indicateur
+   "en direct"/l'état de tension (DESIGN.md.Colors), jamais à un état neutre/terminé. */
+.partie-terminee-badge {
+  display: inline-flex;
+  align-items: center;
+  border: 1.5px dashed var(--color-line);
+  color: var(--color-ink-soft);
+  border-radius: var(--radius-full);
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--text-caption-size);
+  letter-spacing: var(--text-caption-letter-spacing);
 }
 
 .avatar-stack {

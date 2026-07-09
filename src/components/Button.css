@@ -1,5 +1,6 @@
 .cta-primary,
-.cta-secondary {
+.cta-secondary,
+.cta-close-game {
   font-family: var(--font-family);
   font-size: var(--text-body-size);
   font-weight: var(--text-body-sm-weight);
@@ -9,7 +10,8 @@
 }
 
 .cta-primary:disabled,
-.cta-secondary:disabled {
+.cta-secondary:disabled,
+.cta-close-game:disabled {
   cursor: not-allowed;
   opacity: 0.6;
 }
@@ -26,5 +28,12 @@
   background: transparent;
   color: var(--color-ink);
   border: 1.5px dashed var(--color-line);
+  border-radius: var(--radius-default);
+}
+
+.cta-close-game {
+  background: transparent;
+  color: var(--color-terracotta);
+  border: 1.5px dashed var(--color-terracotta);
   border-radius: var(--radius-default);
 }

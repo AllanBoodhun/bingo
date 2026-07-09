@@ -74,7 +74,15 @@ function App() {
     return null
   }
 
-  if (!session) {
+  // Une session invité (anonyme, créée via signInAnonymously() dans RejoindrePartieScreen)
+  // est traitée comme "pas de session" pour l'accès à la Bibliothèque/Création de grille —
+  // ces surfaces sont réservées aux comptes permanents (FR-19). Ne jamais appeler signOut()
+  // ici : détruire la session casserait la reconnexion (Story 2.6) et l'idempotence de
+  // rejoindre_partie pour un invité qui reviendrait directement via le lien de sa partie.
+  // `!== false` plutôt qu'un test de vérité direct : is_anonymous est typé
+  // `boolean | undefined` par le SDK — échec fermé (vers AuthScreen) par défaut en cas
+  // d'incertitude, plutôt qu'un échec ouvert qui laisserait passer un invité par erreur.
+  if (!session || session.user.is_anonymous !== false) {
     return <AuthScreen />
   }
 

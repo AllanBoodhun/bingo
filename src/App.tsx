@@ -15,6 +15,12 @@ type Joueur = {
   partieId: string
 }
 
+type GrilleAEditer = {
+  id: string
+  nom: string
+  taille: number
+}
+
 function lireCodePartieDepuisURL(): string | null {
   return new URLSearchParams(window.location.search).get('partie')
 }
@@ -25,6 +31,7 @@ function App() {
   const [ecran, setEcran] = useState<Ecran>('bibliotheque')
   const [codePartieRejoint] = useState<string | null>(() => lireCodePartieDepuisURL())
   const [joueurRejoint, setJoueurRejoint] = useState<Joueur | null>(null)
+  const [grilleAEditer, setGrilleAEditer] = useState<GrilleAEditer | null>(null)
 
   useEffect(() => {
     if (supabaseConfigError) {
@@ -87,10 +94,29 @@ function App() {
   }
 
   if (ecran === 'creation-grille') {
-    return <CreationGrilleScreen onRetourBibliotheque={() => setEcran('bibliotheque')} />
+    return (
+      <CreationGrilleScreen
+        grilleInitiale={grilleAEditer}
+        onRetourBibliotheque={() => {
+          setEcran('bibliotheque')
+          setGrilleAEditer(null)
+        }}
+      />
+    )
   }
 
-  return <BibliothequeScreen onNouvelleGrille={() => setEcran('creation-grille')} />
+  return (
+    <BibliothequeScreen
+      onNouvelleGrille={() => {
+        setGrilleAEditer(null)
+        setEcran('creation-grille')
+      }}
+      onModifierGrille={(grille) => {
+        setGrilleAEditer(grille)
+        setEcran('creation-grille')
+      }}
+    />
+  )
 }
 
 export default App

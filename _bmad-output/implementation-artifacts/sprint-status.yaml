@@ -41,7 +41,7 @@
 # - Retrospective appends its action items to action_items; sprint-status surfaces open ones
 
 generated: 2026-07-04
-last_updated: 2026-07-09
+last_updated: 2026-07-14
 project: bingo
 project_key: NOKEY
 tracking_system: file-system
@@ -56,7 +56,7 @@ development_status:
   1-5-consulter-sa-bibliotheque-de-grilles: done
   epic-1-retrospective: optional
 
-  epic-2: in-progress
+  epic-2: done
   2-1-lancer-une-partie-et-obtenir-un-lien: done
   2-2-rejoindre-une-partie-et-recevoir-sa-grille-personnelle: done
   2-3-jouer-en-temps-reel-cocher-ses-cases-et-suivre-la-partie: done
@@ -64,5 +64,23 @@ development_status:
   2-5-cloturer-la-partie-et-rappel-de-partie-en-cours: done
   2-6-reconnexion-apres-coupure-reseau: done
   2-7-pas-d-historique-pour-les-invites: done
-  2-8-jouer-seul-sans-inviter-personne: backlog
-  epic-2-retrospective: optional
+  2-8-jouer-seul-sans-inviter-personne: done
+  epic-2-retrospective: done
+
+action_items:
+  - epic: 2
+    action: "Déployer en production (Vercel + projet Supabase Cloud) — jamais fait, seule la stack locale a été exercée jusqu'ici"
+    owner: "Aboodhun"
+    status: open
+  - epic: 2
+    action: "Activer manuellement le provider Anonymous Sign-ins dans le Dashboard Supabase Cloud avant tout test avec des invités (item ouvert depuis la Story 2.2)"
+    owner: "Aboodhun"
+    status: open
+  - epic: 2
+    action: "Tester le jeu en conditions réelles avec de vrais proches (SM-1) une fois déployé"
+    owner: "Aboodhun"
+    status: open
+  - epic: 2
+    action: "Revoir deferred-work.md une fois après un premier usage réel pour re-prioriser à la lumière de bugs éventuels"
+    owner: "Aboodhun"
+    status: open

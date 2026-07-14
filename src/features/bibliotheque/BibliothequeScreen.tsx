@@ -36,9 +36,10 @@ function construireLienPartie(codePartie: string): string {
 
 type BibliothequeScreenProps = {
   onNouvelleGrille: () => void
+  onModifierGrille: (grille: { id: string; nom: string; taille: number }) => void
 }
 
-export function BibliothequeScreen({ onNouvelleGrille }: BibliothequeScreenProps) {
+export function BibliothequeScreen({ onNouvelleGrille, onModifierGrille }: BibliothequeScreenProps) {
   const [grilles, setGrilles] = useState<Grille[]>([])
   const [chargement, setChargement] = useState(true)
   const [chargementEchoue, setChargementEchoue] = useState(false)
@@ -50,6 +51,9 @@ export function BibliothequeScreen({ onNouvelleGrille }: BibliothequeScreenProps
   const [liensPartie, setLiensPartie] = useState<Record<string, string>>({})
   const [liensCopies, setLiensCopies] = useState<Set<string>>(new Set())
   const [partiesEnAttente, setPartiesEnAttente] = useState<PartieEnAttente[]>([])
+  const [clotureEnAttenteIds, setClotureEnAttenteIds] = useState<Set<string>>(new Set())
+  const [suppressionConfirmIds, setSuppressionConfirmIds] = useState<Set<string>>(new Set())
+  const [supprimantIds, setSupprimantIds] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     let ignore = false
@@ -269,6 +273,82 @@ export function BibliothequeScreen({ onNouvelleGrille }: BibliothequeScreenProps
     }
   }
 
+  async function handleCloturerEnAttente(partieId: string) {
+    setClotureEnAttenteIds((current) => new Set(current).add(partieId))
+    setMessage(null)
+
+    try {
+      // `.select()` force la représentation de la ligne modifiée : même piège que
+      // `handleCloturer` de GrilleEnDirecteScreen (Story 2.5) — un update filtré en
+      // silence par RLS renverrait sinon un succès sans erreur, sans que la clôture
+      // n'ait réellement eu lieu.
+      const { data, error } = await supabase
+        .from('parties')
+        .update({ statut: 'terminee' })
+        .eq('id', partieId)
+        .select()
+
+      if (error || !data || data.length === 0) {
+        setMessage(friendlyErrorMessage())
+        return
+      }
+
+      setPartiesEnAttente((current) => current.filter((p) => p.id !== partieId))
+    } catch {
+      setMessage(friendlyErrorMessage())
+    } finally {
+      setClotureEnAttenteIds((current) => {
+        const next = new Set(current)
+        next.delete(partieId)
+        return next
+      })
+    }
+  }
+
+  function handleDemanderSuppression(grilleId: string) {
+    setSuppressionConfirmIds((current) => new Set(current).add(grilleId))
+  }
+
+  function handleAnnulerSuppression(grilleId: string) {
+    setSuppressionConfirmIds((current) => {
+      const next = new Set(current)
+      next.delete(grilleId)
+      return next
+    })
+  }
+
+  async function handleSupprimer(grille: Grille) {
+    setSupprimantIds((current) => new Set(current).add(grille.id))
+    setMessage(null)
+
+    try {
+      // `.select()` force la représentation de la ligne supprimée : même piège que
+      // handleCloturer/handleToggle — un delete filtré en silence par RLS renverrait
+      // sinon un succès sans erreur, sans que la grille n'ait réellement été supprimée.
+      const { data, error } = await supabase.from('grilles').delete().eq('id', grille.id).select()
+
+      if (error || !data || data.length === 0) {
+        setMessage(friendlyErrorMessage())
+        return
+      }
+
+      setGrilles((current) => current.filter((g) => g.id !== grille.id))
+    } catch {
+      setMessage(friendlyErrorMessage())
+    } finally {
+      setSupprimantIds((current) => {
+        const next = new Set(current)
+        next.delete(grille.id)
+        return next
+      })
+      setSuppressionConfirmIds((current) => {
+        const next = new Set(current)
+        next.delete(grille.id)
+        return next
+      })
+    }
+  }
+
   if (chargement) {
     return null
   }
@@ -288,7 +368,15 @@ export function BibliothequeScreen({ onNouvelleGrille }: BibliothequeScreenProps
     <main className="bibliotheque-screen">
       <h1 className="bibliotheque-screen__title">Bibliothèque</h1>
 
-      {partiesEnAttente.length > 0 && <RappelPartieEnCours parties={partiesEnAttente} />}
+      {partiesEnAttente.length > 0 && (
+        <RappelPartieEnCours
+          parties={partiesEnAttente}
+          liensCopies={liensCopies}
+          onCopierLien={handleCopierLien}
+          clotureEnAttenteIds={clotureEnAttenteIds}
+          onCloturer={handleCloturerEnAttente}
+        />
+      )}
 
       {grilles.length === 0 ? (
         <p className="bibliotheque-screen__subtitle">Crée ta première grille pour commencer !</p>
@@ -298,8 +386,18 @@ export function BibliothequeScreen({ onNouvelleGrille }: BibliothequeScreenProps
             <li key={grille.id} className="grille-list__item">
               <div className="grille-list__row">
                 <span className="grille-list__nom">{grille.nom}</span>
+              </div>
+              <div className="grille-list__actions">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  aria-label={`Modifier ${grille.nom}`}
+                  onClick={() => onModifierGrille({ id: grille.id, nom: grille.nom, taille: grille.taille })}
+                >
+                  Modifier
+                </Button>
                 {grille.validee && (
-                  <div className="grille-list__actions">
+                  <>
                     <Button
                       type="button"
                       variant="secondary"
@@ -318,13 +416,52 @@ export function BibliothequeScreen({ onNouvelleGrille }: BibliothequeScreenProps
                     >
                       Dupliquer
                     </Button>
-                  </div>
+                  </>
+                )}
+                {suppressionConfirmIds.has(grille.id) ? (
+                  <>
+                    <Button
+                      type="button"
+                      variant="close-game"
+                      aria-label={`Confirmer la suppression de ${grille.nom}`}
+                      disabled={supprimantIds.has(grille.id)}
+                      onClick={() => handleSupprimer(grille)}
+                    >
+                      Confirmer la suppression ?
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      aria-label={`Annuler la suppression de ${grille.nom}`}
+                      onClick={() => handleAnnulerSuppression(grille.id)}
+                    >
+                      Annuler
+                    </Button>
+                  </>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="close-game"
+                    aria-label={`Supprimer ${grille.nom}`}
+                    onClick={() => handleDemanderSuppression(grille.id)}
+                  >
+                    Supprimer
+                  </Button>
                 )}
               </div>
               {liensPartie[grille.id] && (
                 <div className="grille-list__partie">
                   <p className="grille-list__partie-titre">Ta partie est prête ! Partage ce lien :</p>
                   <p className="grille-list__lien">{liensPartie[grille.id]}</p>
+                  <Button
+                    type="button"
+                    variant="primary"
+                    onClick={() => {
+                      window.location.href = liensPartie[grille.id]
+                    }}
+                  >
+                    Rejoindre maintenant
+                  </Button>
                   <Button
                     type="button"
                     variant="secondary"
@@ -353,9 +490,19 @@ export function BibliothequeScreen({ onNouvelleGrille }: BibliothequeScreenProps
 
 type RappelPartieEnCoursProps = {
   parties: PartieEnAttente[]
+  liensCopies: Set<string>
+  onCopierLien: (partieId: string, lien: string) => void
+  clotureEnAttenteIds: Set<string>
+  onCloturer: (partieId: string) => void
 }
 
-function RappelPartieEnCours({ parties }: RappelPartieEnCoursProps) {
+function RappelPartieEnCours({
+  parties,
+  liensCopies,
+  onCopierLien,
+  clotureEnAttenteIds,
+  onCloturer,
+}: RappelPartieEnCoursProps) {
   return (
     <div className="bibliotheque-screen__rappel">
       <p className="bibliotheque-screen__rappel-titre">
@@ -365,6 +512,28 @@ function RappelPartieEnCours({ parties }: RappelPartieEnCoursProps) {
         <div key={partie.id} className="bibliotheque-screen__rappel-item">
           <span className="grille-list__nom">{partie.nom}</span>
           <p className="grille-list__lien">{partie.lien}</p>
+          <div className="grille-list__actions">
+            <Button
+              type="button"
+              variant="primary"
+              onClick={() => {
+                window.location.href = partie.lien
+              }}
+            >
+              Rejoindre maintenant
+            </Button>
+            <Button type="button" variant="secondary" onClick={() => onCopierLien(partie.id, partie.lien)}>
+              {liensCopies.has(partie.id) ? 'Lien copié !' : 'Copier le lien'}
+            </Button>
+            <Button
+              type="button"
+              variant="close-game"
+              disabled={clotureEnAttenteIds.has(partie.id)}
+              onClick={() => onCloturer(partie.id)}
+            >
+              Clôturer la Partie
+            </Button>
+          </div>
         </div>
       ))}
     </div>

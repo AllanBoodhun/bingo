@@ -79,7 +79,8 @@ La flèche ne remonte jamais : l'Autorité ne dépend jamais de la couche de pr�
 
 - **Binds:** FR-3, FR-10 à FR-15
 - **Prevents:** entretenir deux mécanismes temps réel parallèles (état en base + messagerie pub/sub) alors qu'il n'existe qu'une seule source de vérité
-- **Rule:** toutes les mises à jour live de l'UI (case cochée, phrase corrigée, vainqueur déclaré, partie close, notifications transitoires) dérivent des abonnements Postgres Changes sur les tables `parties`, `cases`, `grilles`, `phrases` et `parties_vainqueurs` — pas de canal Broadcast séparé. Le vainqueur se lit exclusivement via l'abonnement à `parties_vainqueurs` (jamais un champ dérivé sur `parties`).
+- **Rule:** toutes les mises à jour live de l'UI (case cochée, phrase corrigée, vainqueur déclaré, partie close, joueur arrivé, notifications transitoires) dérivent des abonnements Postgres Changes sur les tables `parties`, `cases`, `grilles`, `phrases`, `joueurs` et `parties_vainqueurs` — pas de canal Broadcast séparé. Le vainqueur se lit exclusivement via l'abonnement à `parties_vainqueurs` (jamais un champ dérivé sur `parties`).
+- **Révision (2026-07-14, test en conditions réelles) :** `joueurs` était initialement exclue de cette liste (Stories 2.3/2.4/2.6), au motif que la pile d'avatars figée était un détail cosmétique acceptable. Un test réel a montré un impact plus grave qu'anticipé : sans elle, un vainqueur arrivé après le montage de l'écran s'affichait comme "Un joueur" au lieu de son vrai pseudo. `joueurs` est donc désormais publiée comme les autres tables ; la policy select existante (Story 2.2) suffisait déjà à scoper correctement la diffusion.
 
 ### AD-8 — Propriété d'écriture par ligne (RLS) [ADOPTED]
 

@@ -57,6 +57,11 @@ export function GrilleEnDirecteScreen({ joueur }: GrilleEnDirecteScreenProps) {
   const [statutPartie, setStatutPartie] = useState<StatutPartie>('en_cours')
   const [estCreateur, setEstCreateur] = useState(false)
   const [clotureEnCours, setClotureEnCours] = useState(false)
+  // Miroir synchrone de `joueurs`, même raison d'être que `vainqueurIdsRef` : les
+  // handlers Realtime (toast de cochage, overlay de vainqueur) doivent résoudre un
+  // pseudo à jour même pour un joueur arrivé après l'ouverture du canal — un `const`
+  // fermé sur l'instantané chargé au montage ne le pourrait jamais.
+  const joueursRef = useRef<JoueurPartie[]>([])
 
   function afficherToast(message: string) {
     if (toastTimerRef.current) {
@@ -64,6 +69,10 @@ export function GrilleEnDirecteScreen({ joueur }: GrilleEnDirecteScreenProps) {
     }
     setToast(message)
     toastTimerRef.current = setTimeout(() => setToast(null), TOAST_DUREE_MS)
+  }
+
+  function resoudrePseudo(joueurId: string): string {
+    return joueursRef.current.find((j) => j.id === joueurId)?.pseudo ?? 'Un joueur'
   }
 
   useEffect(() => {
@@ -138,10 +147,10 @@ export function GrilleEnDirecteScreen({ joueur }: GrilleEnDirecteScreenProps) {
         }
 
         const listeJoueurs = joueursError || !joueursData ? [] : joueursData
-
-        function resoudrePseudo(joueurId: string): string {
-          return listeJoueurs.find((j) => j.id === joueurId)?.pseudo ?? 'Un joueur'
-        }
+        // Avant tout appel à resoudrePseudo (y compris celui juste en dessous pour
+        // vainqueursInitiaux) : le ref doit refléter ce chargement pour que la résolution
+        // des vainqueurs déjà connus soit correcte dès ce même cycle.
+        joueursRef.current = listeJoueurs
 
         const vainqueursInitiaux =
           vainqueursError || !vainqueursData
@@ -189,7 +198,7 @@ export function GrilleEnDirecteScreen({ joueur }: GrilleEnDirecteScreenProps) {
 
         // Fetch-then-subscribe (AD-10) : le canal Realtime n'ouvre qu'après le chargement
         // complet réussi, à chaque appel de charger() — montage initial comme reconnexion
-        // silencieuse (Story 2.6). Un seul canal, quatre écoutes — pas de filtre serveur par
+        // silencieuse (Story 2.6). Un seul canal, cinq écoutes — pas de filtre serveur par
         // partie_id/grille_id : les policies select scopent déjà la diffusion Realtime
         // elle-même (AD-7), un filtre applicatif reste nécessaire pour les cas où la RLS
         // couvre plusieurs parties d'un même utilisateur (voir gardes ci-dessous, Story 2.5).
@@ -197,14 +206,28 @@ export function GrilleEnDirecteScreen({ joueur }: GrilleEnDirecteScreenProps) {
           .channel(`partie:${joueur.partieId}`)
           .on(
             'postgres_changes',
+            { event: 'INSERT', schema: 'public', table: 'joueurs' },
+            (payload) => {
+              const nouveauJoueur = payload.new as { id: string; pseudo: string; partie_id: string }
+              if (nouveauJoueur.partie_id !== joueur.partieId) return
+              // Idempotence : un événement redélivré (reconnexion brève) ne doit pas
+              // dupliquer l'entrée dans la pile d'avatars.
+              if (joueursRef.current.some((j) => j.id === nouveauJoueur.id)) return
+              const misAJour = [...joueursRef.current, { id: nouveauJoueur.id, pseudo: nouveauJoueur.pseudo }]
+              joueursRef.current = misAJour
+              setJoueurs(misAJour)
+            },
+          )
+          .on(
+            'postgres_changes',
             { event: 'UPDATE', schema: 'public', table: 'cases' },
             (payload) => {
               const nouvelleCase = payload.new as { joueur_id: string; checked: boolean }
               // Ne notifier que sur cochage (pas décochage) et jamais pour ses propres cases.
               if (!nouvelleCase.checked || nouvelleCase.joueur_id === joueur.id) return
-              // Repli générique si le pseudo n'est pas dans l'instantané chargé au montage
-              // (joueur arrivé après coup — `joueurs` n'est délibérément pas temps réel, AD-7) :
-              // la notification reste affichée plutôt que d'être abandonnée en silence.
+              // Repli générique conservé en filet de sécurité (ex. écoute `joueurs` pas
+              // encore établie au moment précis de l'événement) plutôt que d'abandonner
+              // la notification en silence — `joueursRef` couvre le cas normal désormais.
               afficherToast(`${resoudrePseudo(nouvelleCase.joueur_id)} vient de cocher une Case.`)
             },
           )

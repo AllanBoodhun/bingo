@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { Session } from '@supabase/supabase-js'
+import './App.scss'
 import { supabase, supabaseConfigError } from './lib/supabase/client'
 import { AuthScreen } from './features/auth/AuthScreen'
 import { BibliothequeScreen } from './features/bibliotheque/BibliothequeScreen'

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 import { supabase } from '../../lib/supabase/client'
 import { Button } from '../../components/Button'
-import './GrilleEnDirecteScreen.css'
+import './GrilleEnDirecteScreen.scss'
 
 type Joueur = {
   id: string

@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { supabase } from '../../lib/supabase/client'
 import { Button } from '../../components/Button'
-import './CreationGrilleScreen.css'
+import './CreationGrilleScreen.scss'
 
 type Grille = {
   id: string

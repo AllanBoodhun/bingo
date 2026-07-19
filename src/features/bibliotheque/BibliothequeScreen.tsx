@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase/client'
 import { Button } from '../../components/Button'
-import './BibliothequeScreen.css'
+import './BibliothequeScreen.scss'
 
 type Grille = {
   id: string

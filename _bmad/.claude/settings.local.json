@@ -129,7 +129,9 @@
       "Bash(echo \"lint exit: $?\")",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://127.0.0.1:64321/rest/v1/ --max-time 3)",
       "Bash(npx --no-install supabase status)",
-      "Bash(npx *)"
+      "Bash(npx *)",
+      "Bash(curl *)",
+      "Bash(xargs -I{} sh -c 'echo \"== {} ==\"; cat {}')"
     ]
   }
 }

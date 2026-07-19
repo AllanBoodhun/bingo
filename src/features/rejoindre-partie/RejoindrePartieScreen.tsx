@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { supabase } from '../../lib/supabase/client'
 import { Button } from '../../components/Button'
-import './RejoindrePartieScreen.css'
+import './RejoindrePartieScreen.scss'
 
 type Joueur = {
   id: string

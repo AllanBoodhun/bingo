@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { supabase } from '../../lib/supabase/client'
 import { Button } from '../../components/Button'
-import './AuthScreen.css'
+import './AuthScreen.scss'
 
 type Mode = 'login' | 'signup'
 

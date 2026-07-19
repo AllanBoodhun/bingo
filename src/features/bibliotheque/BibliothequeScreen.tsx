@@ -16,6 +16,11 @@ type PartieEnAttente = {
   lien: string
 }
 
+type PartieActive = {
+  id: string
+  codePartie: string
+}
+
 function friendlyErrorMessage(): string {
   return 'Un souci est survenu, réessaie dans un instant.'
 }
@@ -51,6 +56,7 @@ export function BibliothequeScreen({ onNouvelleGrille, onModifierGrille }: Bibli
   const [liensPartie, setLiensPartie] = useState<Record<string, string>>({})
   const [liensCopies, setLiensCopies] = useState<Set<string>>(new Set())
   const [partiesEnAttente, setPartiesEnAttente] = useState<PartieEnAttente[]>([])
+  const [partiesActivesParGrille, setPartiesActivesParGrille] = useState<Record<string, PartieActive[]>>({})
   const [clotureEnAttenteIds, setClotureEnAttenteIds] = useState<Set<string>>(new Set())
   const [suppressionConfirmIds, setSuppressionConfirmIds] = useState<Set<string>>(new Set())
   const [supprimantIds, setSupprimantIds] = useState<Set<string>>(new Set())
@@ -63,6 +69,7 @@ export function BibliothequeScreen({ onNouvelleGrille, onModifierGrille }: Bibli
     setGrilles([])
     setMessage(null)
     setPartiesEnAttente([])
+    setPartiesActivesParGrille({})
 
     async function charger() {
       try {
@@ -109,6 +116,30 @@ export function BibliothequeScreen({ onNouvelleGrille, onModifierGrille }: Bibli
             validee: (comptesParGrille.get(g.id) ?? 0) === g.taille * g.taille,
           })),
         )
+
+        // Parties actives par grille : indicateur persistant (survit au rechargement,
+        // contrairement à `liensPartie` qui n'existe que le temps de la session après un
+        // clic sur "Relancer") de toute partie encore `en_cours`, qu'un vainqueur ait été
+        // déclaré ou non. Repose sur la policy select déjà existante ("Créateur lit ses
+        // parties", Story 2.1) : aucune nouvelle policy/colonne nécessaire. Dégradation
+        // silencieuse en cas d'échec, même principe que le rappel de clôture ci-dessous.
+        const { data: partiesActivesData, error: partiesActivesError } = await supabase
+          .from('parties')
+          .select('id, grille_id, code_partie')
+          .in('grille_id', ids)
+          .eq('statut', 'en_cours')
+
+        if (ignore) return
+
+        if (!partiesActivesError && partiesActivesData) {
+          const parGrille: Record<string, PartieActive[]> = {}
+          for (const p of partiesActivesData) {
+            const liste = parGrille[p.grille_id] ?? []
+            liste.push({ id: p.id, codePartie: p.code_partie })
+            parGrille[p.grille_id] = liste
+          }
+          setPartiesActivesParGrille(parGrille)
+        }
 
         // Rappel de partie en cours (FR-14) : chargement séquentiel supplémentaire,
         // dégradation silencieuse en cas d'échec (pas de bannière), jamais un blocage
@@ -294,6 +325,14 @@ export function BibliothequeScreen({ onNouvelleGrille, onModifierGrille }: Bibli
       }
 
       setPartiesEnAttente((current) => current.filter((p) => p.id !== partieId))
+      setPartiesActivesParGrille((current) => {
+        const next: Record<string, PartieActive[]> = {}
+        for (const [grilleId, liste] of Object.entries(current)) {
+          const filtree = liste.filter((p) => p.id !== partieId)
+          if (filtree.length > 0) next[grilleId] = filtree
+        }
+        return next
+      })
     } catch {
       setMessage(friendlyErrorMessage())
     } finally {
@@ -471,6 +510,35 @@ export function BibliothequeScreen({ onNouvelleGrille, onModifierGrille }: Bibli
                   </Button>
                 </div>
               )}
+              {(partiesActivesParGrille[grille.id] ?? []).map((partie) => {
+                const lien = construireLienPartie(partie.codePartie)
+                return (
+                  <div key={partie.id} className="grille-list__partie">
+                    <p className="grille-list__partie-titre">Partie en cours :</p>
+                    <p className="grille-list__lien">{lien}</p>
+                    <Button
+                      type="button"
+                      variant="primary"
+                      onClick={() => {
+                        window.location.href = lien
+                      }}
+                    >
+                      Rejoindre maintenant
+                    </Button>
+                    <Button type="button" variant="secondary" onClick={() => handleCopierLien(partie.id, lien)}>
+                      {liensCopies.has(partie.id) ? 'Lien copié !' : 'Copier le lien'}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="close-game"
+                      disabled={clotureEnAttenteIds.has(partie.id)}
+                      onClick={() => handleCloturerEnAttente(partie.id)}
+                    >
+                      Clôturer la Partie
+                    </Button>
+                  </div>
+                )
+              })}
             </li>
           ))}
         </ul>

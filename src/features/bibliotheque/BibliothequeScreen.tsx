@@ -1,25 +1,11 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase/client'
 import { Button } from '../../components/Button'
+import { GrilleCard } from './components/GrilleCard'
+import { RappelPartieEnCours } from './components/RappelPartieEnCours'
+import type { Grille, PartieActive, PartieEnAttente } from './types'
+import { construireLienPartie } from './utils'
 import './BibliothequeScreen.scss'
-
-type Grille = {
-  id: string
-  nom: string
-  taille: number
-  validee: boolean
-}
-
-type PartieEnAttente = {
-  id: string
-  nom: string
-  lien: string
-}
-
-type PartieActive = {
-  id: string
-  codePartie: string
-}
 
 function friendlyErrorMessage(): string {
   return 'Un souci est survenu, réessaie dans un instant.'
@@ -33,10 +19,6 @@ function nomDeLaCopie(nomSource: string): string {
     return `${nomSource}${suffixe}`
   }
   return `${nomSource.slice(0, NOM_MAX_LENGTH - suffixe.length)}${suffixe}`
-}
-
-function construireLienPartie(codePartie: string): string {
-  return `${window.location.origin}?partie=${codePartie}`
 }
 
 type BibliothequeScreenProps = {
@@ -425,124 +407,26 @@ export function BibliothequeScreen({ onNouvelleGrille, onModifierGrille }: Bibli
       ) : (
         <ul className="grille-list">
           {grilles.map((grille) => (
-            <li key={grille.id} className="grille-list__item">
-              <div className="grille-list__row">
-                <span className="grille-list__nom">{grille.nom}</span>
-              </div>
-              <div className="grille-list__actions">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  aria-label={`Modifier ${grille.nom}`}
-                  onClick={() => onModifierGrille({ id: grille.id, nom: grille.nom, taille: grille.taille })}
-                >
-                  Modifier
-                </Button>
-                {grille.validee && (
-                  <>
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      aria-label={`Relancer ${grille.nom}`}
-                      disabled={lancementIds.has(grille.id)}
-                      onClick={() => handleRelancer(grille)}
-                    >
-                      Relancer
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      aria-label={`Dupliquer ${grille.nom}`}
-                      disabled={dupliquantIds.has(grille.id)}
-                      onClick={() => handleDupliquer(grille)}
-                    >
-                      Dupliquer
-                    </Button>
-                  </>
-                )}
-                {suppressionConfirmIds.has(grille.id) ? (
-                  <>
-                    <Button
-                      type="button"
-                      variant="close-game"
-                      aria-label={`Confirmer la suppression de ${grille.nom}`}
-                      disabled={supprimantIds.has(grille.id)}
-                      onClick={() => handleSupprimer(grille)}
-                    >
-                      Confirmer la suppression ?
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      aria-label={`Annuler la suppression de ${grille.nom}`}
-                      onClick={() => handleAnnulerSuppression(grille.id)}
-                    >
-                      Annuler
-                    </Button>
-                  </>
-                ) : (
-                  <Button
-                    type="button"
-                    variant="close-game"
-                    aria-label={`Supprimer ${grille.nom}`}
-                    onClick={() => handleDemanderSuppression(grille.id)}
-                  >
-                    Supprimer
-                  </Button>
-                )}
-              </div>
-              {liensPartie[grille.id] && (
-                <div className="grille-list__partie">
-                  <p className="grille-list__partie-titre">Ta partie est prête ! Partage ce lien :</p>
-                  <p className="grille-list__lien">{liensPartie[grille.id]}</p>
-                  <Button
-                    type="button"
-                    variant="primary"
-                    onClick={() => {
-                      window.location.href = liensPartie[grille.id]
-                    }}
-                  >
-                    Rejoindre maintenant
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={() => handleCopierLien(grille.id, liensPartie[grille.id])}
-                  >
-                    {liensCopies.has(grille.id) ? 'Lien copié !' : 'Copier le lien'}
-                  </Button>
-                </div>
-              )}
-              {(partiesActivesParGrille[grille.id] ?? []).map((partie) => {
-                const lien = construireLienPartie(partie.codePartie)
-                return (
-                  <div key={partie.id} className="grille-list__partie">
-                    <p className="grille-list__partie-titre">Partie en cours :</p>
-                    <p className="grille-list__lien">{lien}</p>
-                    <Button
-                      type="button"
-                      variant="primary"
-                      onClick={() => {
-                        window.location.href = lien
-                      }}
-                    >
-                      Rejoindre maintenant
-                    </Button>
-                    <Button type="button" variant="secondary" onClick={() => handleCopierLien(partie.id, lien)}>
-                      {liensCopies.has(partie.id) ? 'Lien copié !' : 'Copier le lien'}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="close-game"
-                      disabled={clotureEnAttenteIds.has(partie.id)}
-                      onClick={() => handleCloturerEnAttente(partie.id)}
-                    >
-                      Clôturer la Partie
-                    </Button>
-                  </div>
-                )
-              })}
-            </li>
+            <GrilleCard
+              key={grille.id}
+              grille={grille}
+              lienPartie={liensPartie[grille.id]}
+              liensCopies={liensCopies}
+              partiesActives={partiesActivesParGrille[grille.id] ?? []}
+              lancementEnCours={lancementIds.has(grille.id)}
+              dupliquantEnCours={dupliquantIds.has(grille.id)}
+              confirmationSuppression={suppressionConfirmIds.has(grille.id)}
+              suppressionEnCours={supprimantIds.has(grille.id)}
+              clotureEnAttenteIds={clotureEnAttenteIds}
+              onModifierGrille={onModifierGrille}
+              onRelancer={handleRelancer}
+              onDupliquer={handleDupliquer}
+              onDemanderSuppression={handleDemanderSuppression}
+              onAnnulerSuppression={handleAnnulerSuppression}
+              onSupprimer={handleSupprimer}
+              onCopierLien={handleCopierLien}
+              onCloturerEnAttente={handleCloturerEnAttente}
+            />
           ))}
         </ul>
       )}
@@ -552,57 +436,5 @@ export function BibliothequeScreen({ onNouvelleGrille, onModifierGrille }: Bibli
         Me déconnecter
       </Button>
     </main>
-  )
-}
-
-type RappelPartieEnCoursProps = {
-  parties: PartieEnAttente[]
-  liensCopies: Set<string>
-  onCopierLien: (partieId: string, lien: string) => void
-  clotureEnAttenteIds: Set<string>
-  onCloturer: (partieId: string) => void
-}
-
-function RappelPartieEnCours({
-  parties,
-  liensCopies,
-  onCopierLien,
-  clotureEnAttenteIds,
-  onCloturer,
-}: RappelPartieEnCoursProps) {
-  return (
-    <div className="bibliotheque-screen__rappel">
-      <p className="bibliotheque-screen__rappel-titre">
-        Une Partie est toujours en cours — tu veux la clôturer ?
-      </p>
-      {parties.map((partie) => (
-        <div key={partie.id} className="bibliotheque-screen__rappel-item">
-          <span className="grille-list__nom">{partie.nom}</span>
-          <p className="grille-list__lien">{partie.lien}</p>
-          <div className="grille-list__actions">
-            <Button
-              type="button"
-              variant="primary"
-              onClick={() => {
-                window.location.href = partie.lien
-              }}
-            >
-              Rejoindre maintenant
-            </Button>
-            <Button type="button" variant="secondary" onClick={() => onCopierLien(partie.id, partie.lien)}>
-              {liensCopies.has(partie.id) ? 'Lien copié !' : 'Copier le lien'}
-            </Button>
-            <Button
-              type="button"
-              variant="close-game"
-              disabled={clotureEnAttenteIds.has(partie.id)}
-              onClick={() => onCloturer(partie.id)}
-            >
-              Clôturer la Partie
-            </Button>
-          </div>
-        </div>
-      ))}
-    </div>
   )
 }

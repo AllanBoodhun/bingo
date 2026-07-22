@@ -96,6 +96,10 @@ export function DesignSystemScreen() {
 
       <Section titre="Boutons">
         <div className="ds-row">
+           <button className="cta-primary-xl">CTA principal XL</button>
+          <button className="cta-primary-xl" disabled>
+            CTA principal XL
+          </button>
           <button className="cta-primary">CTA principal</button>
           <button className="cta-primary" disabled>
             CTA principal

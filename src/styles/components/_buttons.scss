@@ -1,4 +1,5 @@
 .cta-primary,
+.cta-primary-xl,
 .cta-secondary,
 .cta-close-game {
   font-family: var(--font-family);
@@ -10,13 +11,14 @@
 }
 
 .cta-primary:disabled,
+.cta-primary-xl:disabled,
 .cta-secondary:disabled,
 .cta-close-game:disabled {
   cursor: not-allowed;
   opacity: 0.6;
 }
 
-.cta-primary {
+.cta-primary, .cta-primary-xl {
   background: var(--color-terracotta);
   color: var(--color-paper-card);
   border: none;

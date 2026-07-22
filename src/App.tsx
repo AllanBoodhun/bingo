@@ -7,6 +7,7 @@ import { BibliothequeScreen } from './features/bibliotheque/BibliothequeScreen'
 import { CreationGrilleScreen } from './features/creation-grille/CreationGrilleScreen'
 import { RejoindrePartieScreen } from './features/rejoindre-partie/RejoindrePartieScreen'
 import { GrilleEnDirecteScreen } from './features/grille-en-direct/GrilleEnDirecteScreen'
+import { DesignSystemScreen } from './features/design-system/DesignSystemScreen'
 
 type Ecran = 'bibliotheque' | 'creation-grille'
 
@@ -99,6 +100,13 @@ function App() {
 
     return () => subscription.unsubscribe()
   }, [])
+
+  // Page interne non listée dans la navigation, réservée au travail sur le design
+  // system (§Colors/Typography/Components de DESIGN.md) — accès uniquement via cette
+  // URL directe, avant toute vérification Supabase pour rester utilisable hors-ligne.
+  if (new URLSearchParams(window.location.search).has('design-system')) {
+    return <DesignSystemScreen />
+  }
 
   if (supabaseConfigError) {
     return <p className="config-error">{supabaseConfigError}</p>

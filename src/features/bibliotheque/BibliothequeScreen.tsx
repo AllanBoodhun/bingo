@@ -407,6 +407,9 @@ export function BibliothequeScreen({ onNouvelleGrille, onModifierGrille }: Bibli
     <main className="bibliotheque-screen">
       <h1 className="bibliotheque-screen__title">Bibliothèque</h1>
 
+      <Button type="button" variant="primary" onClick={onNouvelleGrille}>
+        Nouvelle grille
+      </Button>
       {partiesEnAttente.length > 0 && (
         <RappelPartieEnCours
           parties={partiesEnAttente}
@@ -545,10 +548,6 @@ export function BibliothequeScreen({ onNouvelleGrille, onModifierGrille }: Bibli
       )}
 
       {message && <p className="bibliotheque-screen__message">{message}</p>}
-
-      <Button type="button" variant="primary" onClick={onNouvelleGrille}>
-        Nouvelle grille
-      </Button>
       <Button type="button" variant="secondary" disabled={signingOut} onClick={handleSignOut}>
         Me déconnecter
       </Button>

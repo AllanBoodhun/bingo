@@ -1,0 +1,222 @@
+.design-system-screen {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: var(--space-6) var(--space-screen-margin) calc(var(--space-6) * 3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  color: var(--color-ink);
+}
+
+.design-system-screen__header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.ds-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.ds-section__titre {
+  font-size: var(--text-headline-size);
+  font-weight: var(--text-headline-weight);
+  line-height: var(--text-headline-line-height);
+  color: var(--color-terracotta);
+  border-bottom: 1.5px dashed var(--color-line);
+  padding-bottom: var(--space-2);
+}
+
+.ds-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+/* Typographie */
+
+.ds-typos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.ds-typo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.ds-typo__label {
+  font-size: var(--text-caption-size);
+  letter-spacing: var(--text-caption-letter-spacing);
+  color: var(--color-ink-soft);
+  text-transform: uppercase;
+}
+
+.ds-type--display {
+  font-family: var(--font-family);
+  font-size: var(--text-display-size);
+  font-weight: var(--text-display-weight);
+  line-height: var(--text-display-line-height);
+}
+
+.ds-type--headline {
+  font-family: var(--font-family);
+  font-size: var(--text-headline-size);
+  font-weight: var(--text-headline-weight);
+  line-height: var(--text-headline-line-height);
+}
+
+.ds-type--body {
+  font-family: var(--font-family);
+  font-size: var(--text-body-size);
+  font-weight: var(--text-body-weight);
+  line-height: var(--text-body-line-height);
+}
+
+.ds-type--body-sm {
+  font-family: var(--font-family);
+  font-size: var(--text-body-sm-size);
+  font-weight: var(--text-body-sm-weight);
+  line-height: var(--text-body-sm-line-height);
+}
+
+.ds-type--label-caps {
+  font-family: var(--font-family);
+  font-size: var(--text-label-caps-size);
+  font-weight: var(--text-label-caps-weight);
+  letter-spacing: var(--text-label-caps-letter-spacing);
+  text-transform: uppercase;
+}
+
+.ds-type--caption {
+  font-family: var(--font-family);
+  font-size: var(--text-caption-size);
+  font-weight: var(--text-caption-weight);
+  letter-spacing: var(--text-caption-letter-spacing);
+  color: var(--color-ink-soft);
+  font-style: italic;
+}
+
+/* Couleurs */
+
+.ds-swatches {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: var(--space-4);
+}
+
+.ds-swatch {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.ds-swatch__pastille {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: var(--radius-md);
+  border: 1.5px solid var(--color-ink);
+}
+
+.ds-swatch__nom {
+  font-size: var(--text-body-sm-size);
+  font-weight: var(--text-body-sm-weight);
+}
+
+.ds-swatch__hex {
+  font-size: var(--text-caption-size);
+  color: var(--color-ink-soft);
+}
+
+/* Espacements */
+
+.ds-spacings {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.ds-spacing {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.ds-spacing__label {
+  width: 140px;
+  font-size: var(--text-caption-size);
+  color: var(--color-ink-soft);
+}
+
+.ds-spacing__barre {
+  height: var(--space-3);
+  background: var(--color-terracotta);
+  border-radius: var(--radius-sm);
+}
+
+/* Rayons */
+
+.ds-radii {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+}
+
+.ds-radius {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.ds-radius__carre {
+  width: 56px;
+  height: 56px;
+  background: var(--color-paper-card);
+  border: 1.5px solid var(--color-ink);
+}
+
+.ds-radius__label {
+  font-size: var(--text-caption-size);
+  color: var(--color-ink-soft);
+}
+
+/* Champ de saisie */
+
+.ds-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  max-width: 280px;
+}
+
+/* Cases de grille */
+
+.ds-grid-cells {
+  display: grid;
+  grid-template-columns: repeat(2, 100px);
+  gap: var(--space-3);
+}
+
+/* Notifications : toast / banner-reminder / vainqueur-overlay sont en
+   position: fixed en usage réel — on neutralise ça ici pour les afficher
+   en flux normal dans la page de démonstration. */
+
+.ds-notifs {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-4);
+}
+
+.ds-preview-static {
+  position: static !important;
+  left: auto !important;
+  top: auto !important;
+  transform: rotate(0.4deg) !important;
+}

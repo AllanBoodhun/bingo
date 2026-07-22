@@ -43,9 +43,19 @@ export function GrilleCard({
   onCloturerEnAttente,
 }: GrilleCardProps) {
   return (
-    <li className="grille-list__item">
+    <li className="card grille-list__item">
       <div className="grille-list__row">
         <span className="grille-list__nom">{grille.nom}</span>
+        {partiesActives.length > 0 ? (
+          <span className="status-chip">
+            <span className="status-chip__dot" />
+            En cours
+          </span>
+        ) : (
+          <span className="grille-list__taille">
+            {grille.taille}×{grille.taille}
+          </span>
+        )}
       </div>
       <div className="grille-list__actions">
         <Button
@@ -110,7 +120,7 @@ export function GrilleCard({
         )}
       </div>
       {lienPartie && (
-        <div className="grille-list__partie">
+        <div className="card card--accent-sage grille-list__partie">
           <p className="grille-list__partie-titre">Ta partie est prête ! Partage ce lien :</p>
           <PartieLienCard
             id={grille.id}
@@ -121,8 +131,11 @@ export function GrilleCard({
         </div>
       )}
       {partiesActives.map((partie) => (
-        <div key={partie.id} className="grille-list__partie">
-          <p className="grille-list__partie-titre">Partie en cours :</p>
+        <div key={partie.id} className="card card--accent-sage grille-list__partie">
+          <p className="grille-list__partie-titre">
+            {partie.nombreJoueurs} joueur{partie.nombreJoueurs > 1 ? 's' : ''}
+            {partie.vainqueurs.length > 0 && <> — Vainqueur : {partie.vainqueurs.join(', ')}</>}
+          </p>
           <PartieLienCard
             id={partie.id}
             lien={construireLienPartie(partie.codePartie)}

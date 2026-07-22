@@ -17,7 +17,7 @@ export function RappelPartieEnCours({
   onCloturer,
 }: RappelPartieEnCoursProps) {
   return (
-    <div className="bibliotheque-screen__rappel">
+    <div className="card card--accent-sage bibliotheque-screen__rappel">
       <p className="bibliotheque-screen__rappel-titre">
         Une Partie est toujours en cours — tu veux la clôturer ?
       </p>

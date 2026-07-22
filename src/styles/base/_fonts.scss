@@ -1,3 +1,11 @@
-// Aucune police custom chargée pour l'instant : la pile Georgia (--font-family)
-// définie dans base/_tokens.scss suffit (DESIGN.md). Déclarer les @font-face
-// ici si une police custom est ajoutée plus tard.
+// Nunito (Google Font), auto-hébergée dans public/fonts/ pour éviter une dépendance
+// réseau au runtime (PWA utilisée en direct, parfois avec un wifi de salle peu fiable).
+// Fichier variable unique couvrant les graisses 400 à 800 (voir DESIGN.md.Typography) —
+// même approche que le CSS servi par Google Fonts pour les navigateurs modernes.
+@font-face {
+  font-family: 'Nunito';
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url('/fonts/nunito-variable.woff2') format('woff2-variations'), url('/fonts/nunito-variable.woff2') format('woff2');
+}

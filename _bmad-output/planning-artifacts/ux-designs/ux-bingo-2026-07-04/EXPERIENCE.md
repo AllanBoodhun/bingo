@@ -2,7 +2,7 @@
 title: bingo
 status: final
 created: 2026-07-04
-updated: 2026-07-04
+updated: 2026-07-22
 sources:
   - ../../prds/prd-bingo-2026-07-03/prd.md
   - ../../briefs/brief-bingo-2026-07-03/brief.md
@@ -20,9 +20,10 @@ PWA (progressive web app), surface unique, **mobile-first** — l'usage principa
 
 | Surface | Atteint depuis | Objectif |
 |---|---|---|
-| Bibliothèque de grilles | Ouverture app (créateur connecté) | Lister ses grilles, en relancer une ou en créer une nouvelle (PRD FR-16, FR-17) |
+| Bibliothèque de grilles | Ouverture app (créateur connecté) | Lister ses grilles groupées par statut, en relancer une, la modifier ou en créer une nouvelle (PRD FR-16, FR-17) |
 | Connexion / Compte | Bibliothèque (non connecté), ou toute action nécessitant un compte | Créer un compte / se connecter (FR-16) |
 | Création de grille | Bibliothèque → "Nouvelle grille" ou "Dupliquer" | Définir taille, nom, phrases (FR-1 à FR-4) |
+| Édition de grille | Bibliothèque → "Modifier" | Renommer, changer la taille, éditer les phrases d'une grille existante — **et depuis le 2026-07-22**, agit aussi comme point d'accès à Relancer / Dupliquer / Supprimer (au même titre que la Bibliothèque, voir §Component Patterns et §State Patterns) |
 | Rejoindre une partie | Lien de partie externe (invité, hors app) | Entrer un pseudo, rejoindre sans compte (FR-8) |
 | Grille en direct | Lancement de partie (créateur) ou lien rejoint (invité) | Cocher des cases, suivre la partie, voir le vainqueur, clôturer (FR-6, FR-9 à FR-15) |
 
@@ -30,7 +31,9 @@ Pas de barre d'onglets : l'app est trop petite pour en justifier une. Navigation
 
 "Vainqueur déclaré" n'est pas une surface séparée : c'est un **état superposé** de "Grille en direct" (voir §State Patterns) — la partie reste au même endroit, elle change juste d'état, cohérent avec FR-12/FR-13 (la détection du vainqueur ne ferme pas la partie).
 
-→ Référence de composition : `mockups/direction-artisanal.html` (grille en direct + création de grille), `mockups/carnet-checkmark-variants.html` (traitement de la case cochée). Les spines gagnent en cas de conflit avec les mockups — notamment, le mockup affiche "10 joueurs" à titre illustratif, généré avant la décision du plafond à 6 joueurs (FR-8) ; c'est le tableau `Component Patterns` ci-dessous qui fait foi.
+→ Référence de composition : `mockups/direction-artisanal.html` (grille en direct + création de grille, ancienne direction visuelle — voir divergence temporaire `DESIGN.md.Elevation & Depth`), `mockups/carnet-checkmark-variants.html` (traitement de la case cochée). Les spines gagnent en cas de conflit avec les mockups — notamment, le mockup affiche "10 joueurs" à titre illustratif, généré avant la décision du plafond à 6 joueurs (FR-8) ; c'est le tableau `Component Patterns` ci-dessous qui fait foi.
+
+→ **2026-07-22** : `imports/BibiothèqueScreen.png`, `imports/CreationGrille.png`, `imports/EditionGrille.png` — maquettes fournies par le user pour la nouvelle direction visuelle, couvrant Bibliothèque de grilles, Création de grille et Édition de grille (ces trois surfaces ne sont donc plus spine-only, contrairement à la décision du 2026-07-04). Détail de la réconciliation : `reconcile-bibliotheque-screen.md`, `reconcile-creation-grille.md`, `reconcile-edition-grille.md`.
 
 ## Voice and Tone
 
@@ -53,14 +56,18 @@ Comportemental. Les specs visuelles vivent dans `DESIGN.md.Components`.
 | Composant (`DESIGN.md`) | Usage | Règles comportementales |
 |---|---|---|
 | Case de grille (`grid-cell`) | Grille en direct | Tap pour cocher/décocher (FR-10). Pas de confirmation. Changement immédiat, pas d'animation longue. |
-| CTA principal (`cta-primary`) | Lancer la Partie, Rejoindre | Une seule action principale par écran, jamais deux CTA de même poids visuel côte à côte. |
-| Champ de phrase | Création de grille | Ligne éditable à tout moment, y compris après validation et pendant une partie en cours (FR-3) — pas de mode "lecture seule" post-validation. |
-| Sélecteur de taille (chips) | Création de grille | Chips 3×3 à 5×5 (FR-1). Changement de taille désactivé après lancement d'une partie (FR-5) — le chip devient non interactif, pas caché. |
+| CTA principal (`cta-primary`) | Lancer la Partie, Rejoindre, Relancer, Créer/Enregistrer la grille | Une seule action principale par écran, jamais deux CTA de même poids visuel côte à côte. |
+| CTA secondaire (`cta-secondary`) | Modifier, Dupliquer | **2026-07-22** : même poids visuel que le CTA principal (bordure pleine + ombre), distingué par la couleur — n'implique pas une hiérarchie d'importance secondaire au sens accessibilité, seulement une distinction sémantique (action neutre vs action qui avance). |
+| CTA clôture (`cta-close-game`) | Grille en direct (Clôturer, créateur uniquement), Bibliothèque et Édition de grille (Supprimer), tout formulaire (Annuler) | Disponible à tout moment pendant qu'une partie est active, pas seulement après un vainqueur (FR-13) — voir §State Patterns. **2026-07-22** : rôle étendu à toute action de fin/retrait/annulation volontaire, pas seulement la clôture de partie — voir `DESIGN.md.Components`. |
+| Champ de phrase / champ de formulaire | Création de grille, Édition de grille | Ligne éditable à tout moment, y compris après validation et pendant une partie en cours (FR-3) — pas de mode "lecture seule" post-validation. **2026-07-22** : le nom de la grille passe d'un pattern "tap sur le titre pour éditer en place" à un champ label + input permanent, aligné visuellement avec le champ de phrase (override de la décision du 2026-07-04 sur ce point précis — voir `.memlog.md`). |
+| Sélecteur de taille (chips) | Création de grille, Édition de grille | Chips 3×3 à 5×5 (FR-1). Changement de taille désactivé après lancement d'une partie (FR-5) — le chip devient non interactif, pas caché. |
 | Badge "en direct" (`live-badge`) | Grille en direct | Visible en permanence pendant qu'une partie est active. Disparaît seulement à la clôture (FR-13). |
+| Badge de statut (`status-chip`) | Bibliothèque | **2026-07-22** — indique l'état d'une grille sur sa carte (ex. "En cours") ; distinct de `live-badge` qui vit sur l'écran de jeu lui-même. |
 | Pile d'avatars (`avatar-stack`) | Grille en direct | Affiche jusqu'à 3 joueurs + compteur (ex. "+3") — jamais plus de 6 au total, plafond de la Partie (FR-8). |
 | Notification transitoire (`toast`) | Grille en direct | Un événement à la fois ("X vient de cocher"), auto-disparition après quelques secondes. Ne bloque jamais l'interaction avec la grille. |
 | Bannière de rappel (`banner-reminder`) | Bibliothèque (créateur) | Apparaît uniquement si une partie du créateur a un vainqueur déclaré mais n'a pas été clôturée (FR-14). |
-| CTA clôture de partie (`cta-close-game`) | Grille en direct (créateur uniquement) | Disponible à tout moment pendant qu'une partie est active, pas seulement après un vainqueur (FR-13) — voir §State Patterns. |
+| Carte (`card`) | Bibliothèque | **2026-07-22** — chaque grille listée est une carte cliquable/actionnable, groupée par section (voir §State Patterns) ; affiche nom, taille, et pour une partie active : nombre de joueurs et vainqueur le cas échéant. |
+| Barre d'action fixe (`sticky-action-bar`) | Création de grille, Édition de grille | **2026-07-22** — les deux CTA de conclusion du formulaire (créer/enregistrer + annuler) restent visibles en bas d'écran pendant que l'utilisateur remplit les phrases, sans avoir à défiler jusqu'en bas de la liste. |
 
 ## State Patterns
 
@@ -68,7 +75,8 @@ Comportemental. Les specs visuelles vivent dans `DESIGN.md.Components`.
 |---|---|---|
 | Grille incomplète | Création de grille | Le CTA "Lancer la Partie" reste désactivé tant que le nombre de phrases ≠ taille×taille (FR-1). Compteur visible ("5 / 25"). |
 | Bibliothèque vide | Bibliothèque | Premier lancement, aucune grille créée : message d'invitation à créer la première grille, pas de tableau vide silencieux. |
-| Grille validée, partie non lancée | Bibliothèque | Grille listée avec ses deux actions : "Relancer" et "Dupliquer" (FR-17, FR-4). |
+| Bibliothèque groupée par statut | Bibliothèque | **2026-07-22** — les grilles ayant une partie active apparaissent dans une section "Partie en cours" en tête de liste (avec le nombre de joueurs et le vainqueur si déjà déclaré), les autres dans "Mes grilles" — chaque section titrée avec son compte (ex. "Mes grilles - 3"). Override de la présentation en liste plate du 2026-07-04. |
+| Grille validée, partie non lancée | Bibliothèque, Édition de grille | Grille listée/ouverte avec ses actions : "Relancer", "Modifier", "Dupliquer", "Supprimer" (FR-17, FR-4). **2026-07-22** : ces mêmes actions (hors Modifier, qui n'a pas de sens depuis l'écran d'édition lui-même) sont désormais aussi disponibles directement depuis Édition de grille, pas seulement depuis la Bibliothèque — override de la décision du 2026-07-04 qui les limitait à la Bibliothèque. |
 | Saisie du pseudo | Rejoindre une partie | Pseudo saisi → transition immédiate vers "Grille en direct" (traitement interne, pas d'écran d'attente affiché). |
 | Lien de partie invalide | Rejoindre une partie | Lien mal formé ou partie inexistante : message "Cette Partie n'existe plus ou le lien est incorrect", pas de redirection silencieuse vers la Bibliothèque. |
 | Case cochée / non cochée | Grille en direct | Distinction par la coche encre (§DESIGN.md), jamais par la couleur seule (accessibilité). |
@@ -77,7 +85,7 @@ Comportemental. Les specs visuelles vivent dans `DESIGN.md.Components`.
 | Vainqueur déclaré (partie ouverte) | Grille en direct | Overlay "Vainqueur" par-dessus la grille (FR-12), non bloquant — un joueur peut le fermer et continuer à voir sa grille. Le CTA "Clôturer la Partie" du créateur reste au même endroit qu'avant la victoire (FR-13). |
 | Partie clôturée | Grille en direct | Tous les joueurs voient l'état "Partie terminée" ; la grille reste consultable en lecture seule. |
 | Reconnexion après coupure | Grille en direct | Restauration silencieuse de l'état exact (cases cochées, vainqueur déjà annoncé) — pas de rechargement visible, pas de perte de progression (FR-15). |
-| Rappel de partie en cours | Bibliothèque | Bannière pointillée sauge en tête de liste si une partie du créateur a un vainqueur non clôturé (FR-14). |
+| Rappel de partie en cours | Bibliothèque | Bannière (`banner-reminder`, teinte sauge — **2026-07-22** : bordure pleine + ombre, voir `DESIGN.md`) en tête de liste si une partie du créateur a un vainqueur non clôturé (FR-14). |
 | Historique invité | — (aucune surface) | Un Joueur invité sans compte ne voit aucun historique de parties après la fin d'une Partie — il n'y a pas de surface "mes parties" pour lui (FR-19). |
 
 ## Interaction Primitives
@@ -109,7 +117,7 @@ Mêmes personas que le PRD — identifiants UJ repris à l'identique.
 5. **Climax :** un lien de partie est généré ; elle le copie et l'envoie dans le groupe WhatsApp familial.
 6. **Résolution :** elle rejoint elle-même la partie, atterrit sur **Grille en direct** avec sa grille personnelle mélangée.
 
-**Cas limite :** elle repère une coquille après validation — elle tape la phrase concernée (même en partie déjà lancée), la corrige ; le changement se propage en temps réel à tous les joueurs déjà connectés (FR-3).
+**Cas limite :** elle repère une coquille après validation — elle rouvre la grille depuis la Bibliothèque ("Modifier"), atterrit sur **Édition de grille**, tape la phrase concernée (même en partie déjà lancée) et la corrige ; le changement se propage en temps réel à tous les joueurs déjà connectés (FR-3).
 
 ### UJ-2. Karim rejoint la partie depuis le cocktail
 

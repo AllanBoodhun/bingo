@@ -1,0 +1,19 @@
+.status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-family: var(--font-family);
+  font-size: var(--text-caption-size);
+  font-weight: var(--text-body-sm-weight);
+  color: var(--color-terracotta);
+  border: 1.5px dashed var(--color-terracotta);
+  border-radius: var(--radius-full);
+  padding: var(--space-1) var(--space-3);
+}
+
+.status-chip__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: var(--color-terracotta);
+}

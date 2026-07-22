@@ -1,0 +1,15 @@
+.sticky-action-bar {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  gap: var(--space-2);
+  background: var(--color-paper-card);
+  border-top: 2px solid var(--color-ink);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  padding: var(--space-3) var(--space-screen-margin);
+  margin: var(--space-4) calc(var(--space-screen-margin) * -1) 0;
+}
+
+.sticky-action-bar > * {
+  flex: 1;
+}

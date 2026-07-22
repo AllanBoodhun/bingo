@@ -14,4 +14,6 @@ export type PartieEnAttente = {
 export type PartieActive = {
   id: string
   codePartie: string
+  nombreJoueurs: number
+  vainqueurs: string[]
 }

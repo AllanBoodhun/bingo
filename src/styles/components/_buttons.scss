@@ -27,15 +27,17 @@
 }
 
 .cta-secondary {
-  background: transparent;
+  background: var(--color-paper-card);
   color: var(--color-ink);
-  border: 1.5px dashed var(--color-line);
+  border: 2px solid var(--color-ink);
   border-radius: var(--radius-default);
+  box-shadow: 3px 3px 0 var(--color-ink);
 }
 
 .cta-close-game {
-  background: transparent;
-  color: var(--color-terracotta);
-  border: 1.5px dashed var(--color-terracotta);
+  background: var(--color-ink);
+  color: var(--color-paper-card);
+  border: none;
   border-radius: var(--radius-default);
+  box-shadow: 3px 3px 0 var(--color-ink);
 }

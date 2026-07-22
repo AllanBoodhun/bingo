@@ -43,9 +43,6 @@
   gap: var(--space-2);
   font-size: var(--text-body-size);
   color: var(--color-ink);
-  background: var(--color-paper-card);
-  border: 1.5px dashed var(--color-line);
-  border-radius: var(--radius-default);
   padding: var(--space-2) var(--space-3);
 }
 
@@ -60,6 +57,28 @@
   text-align: left;
 }
 
+.grille-list__taille {
+  font-size: var(--text-body-sm-size);
+  color: var(--color-ink-soft);
+}
+
+.grille-list__section-title {
+  text-align: left;
+  font-size: var(--text-label-caps-size);
+  font-weight: var(--text-label-caps-weight);
+  letter-spacing: var(--text-label-caps-letter-spacing);
+  text-transform: uppercase;
+  color: var(--color-ink-soft);
+  margin: 0;
+}
+
+.grille-list__section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  width: 100%;
+}
+
 .grille-list__actions {
   display: flex;
   flex-wrap: wrap;
@@ -70,11 +89,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
-  background: var(--color-paper-card);
-  border: 1.5px dashed var(--color-sage);
-  border-radius: var(--radius-default);
   padding: var(--space-3);
-  transform: rotate(0.4deg);
 }
 
 .grille-list__partie-titre {
@@ -92,19 +107,15 @@
   user-select: all;
 }
 
-/* Mêmes valeurs de tokens que .grille-list__partie (déjà le traitement visuel
-   banner-reminder de DESIGN.md sous un autre nom) — réutilisées ici pour la bannière
-   de rappel de partie en cours, en tête de liste plutôt que par grille. */
+/* Même traitement visuel que .grille-list__partie (banner-reminder de DESIGN.md sous
+   un autre nom) — réutilisé ici pour la bannière de rappel de partie en cours, en
+   tête de liste plutôt que par grille. */
 .bibliotheque-screen__rappel {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
   width: 100%;
-  background: var(--color-paper-card);
-  border: 1.5px dashed var(--color-sage);
-  border-radius: var(--radius-default);
   padding: var(--space-3);
-  transform: rotate(0.4deg);
   text-align: left;
 }
 

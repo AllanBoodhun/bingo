@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase/client'
 import { Button } from '../../components/Button'
+import { BrandMark } from '../../components/BrandMark'
 import { GrilleCard } from './components/GrilleCard'
 import { RappelPartieEnCours } from './components/RappelPartieEnCours'
 import type { Grille, PartieActive, PartieEnAttente } from './types'
@@ -114,10 +115,53 @@ export function BibliothequeScreen({ onNouvelleGrille, onModifierGrille }: Bibli
         if (ignore) return
 
         if (!partiesActivesError && partiesActivesData) {
+          const partieIds = partiesActivesData.map((p) => p.id)
+
+          // Nombre de joueurs + vainqueur(s) par partie active : requêtes secondaires,
+          // dégradation silencieuse en cas d'échec (la carte reste utilisable sans ces
+          // deux informations). Nécessite la policy "Créateur lit les joueurs de ses
+          // parties" (migration 20260722120000) en plus de la policy créateur déjà
+          // existante sur parties_vainqueurs (Story 2.5).
+          const nombreJoueursParPartie = new Map<string, number>()
+          const vainqueursParPartie = new Map<string, string[]>()
+
+          if (partieIds.length > 0) {
+            const { data: joueursData, error: joueursError } = await supabase
+              .from('joueurs')
+              .select('partie_id')
+              .in('partie_id', partieIds)
+
+            if (!ignore && !joueursError && joueursData) {
+              for (const { partie_id } of joueursData) {
+                nombreJoueursParPartie.set(partie_id, (nombreJoueursParPartie.get(partie_id) ?? 0) + 1)
+              }
+            }
+
+            const { data: vainqueursData, error: vainqueursError } = await supabase
+              .from('parties_vainqueurs')
+              .select('partie_id, joueurs(pseudo)')
+              .in('partie_id', partieIds)
+
+            if (!ignore && !vainqueursError && vainqueursData) {
+              for (const row of vainqueursData as unknown as Array<{ partie_id: string; joueurs: { pseudo: string } }>) {
+                const liste = vainqueursParPartie.get(row.partie_id) ?? []
+                liste.push(row.joueurs.pseudo)
+                vainqueursParPartie.set(row.partie_id, liste)
+              }
+            }
+          }
+
+          if (ignore) return
+
           const parGrille: Record<string, PartieActive[]> = {}
           for (const p of partiesActivesData) {
             const liste = parGrille[p.grille_id] ?? []
-            liste.push({ id: p.id, codePartie: p.code_partie })
+            liste.push({
+              id: p.id,
+              codePartie: p.code_partie,
+              nombreJoueurs: nombreJoueursParPartie.get(p.id) ?? 0,
+              vainqueurs: vainqueursParPartie.get(p.id) ?? [],
+            })
             parGrille[p.grille_id] = liste
           }
           setPartiesActivesParGrille(parGrille)
@@ -385,9 +429,38 @@ export function BibliothequeScreen({ onNouvelleGrille, onModifierGrille }: Bibli
     )
   }
 
+  const grillesActives = grilles.filter((g) => (partiesActivesParGrille[g.id] ?? []).length > 0)
+  const grillesAutres = grilles.filter((g) => (partiesActivesParGrille[g.id] ?? []).length === 0)
+
+  function renderGrilleCard(grille: Grille) {
+    return (
+      <GrilleCard
+        key={grille.id}
+        grille={grille}
+        lienPartie={liensPartie[grille.id]}
+        liensCopies={liensCopies}
+        partiesActives={partiesActivesParGrille[grille.id] ?? []}
+        lancementEnCours={lancementIds.has(grille.id)}
+        dupliquantEnCours={dupliquantIds.has(grille.id)}
+        confirmationSuppression={suppressionConfirmIds.has(grille.id)}
+        suppressionEnCours={supprimantIds.has(grille.id)}
+        clotureEnAttenteIds={clotureEnAttenteIds}
+        onModifierGrille={onModifierGrille}
+        onRelancer={handleRelancer}
+        onDupliquer={handleDupliquer}
+        onDemanderSuppression={handleDemanderSuppression}
+        onAnnulerSuppression={handleAnnulerSuppression}
+        onSupprimer={handleSupprimer}
+        onCopierLien={handleCopierLien}
+        onCloturerEnAttente={handleCloturerEnAttente}
+      />
+    )
+  }
+
   return (
     <main className="bibliotheque-screen">
-      <h1 className="bibliotheque-screen__title">Bibliothèque</h1>
+      <h1 className="sr-only">Bibliothèque</h1>
+      <BrandMark />
 
       <Button type="button" variant="primary" onClick={onNouvelleGrille}>
         Nouvelle grille
@@ -405,30 +478,20 @@ export function BibliothequeScreen({ onNouvelleGrille, onModifierGrille }: Bibli
       {grilles.length === 0 ? (
         <p className="bibliotheque-screen__subtitle">Crée ta première grille pour commencer !</p>
       ) : (
-        <ul className="grille-list">
-          {grilles.map((grille) => (
-            <GrilleCard
-              key={grille.id}
-              grille={grille}
-              lienPartie={liensPartie[grille.id]}
-              liensCopies={liensCopies}
-              partiesActives={partiesActivesParGrille[grille.id] ?? []}
-              lancementEnCours={lancementIds.has(grille.id)}
-              dupliquantEnCours={dupliquantIds.has(grille.id)}
-              confirmationSuppression={suppressionConfirmIds.has(grille.id)}
-              suppressionEnCours={supprimantIds.has(grille.id)}
-              clotureEnAttenteIds={clotureEnAttenteIds}
-              onModifierGrille={onModifierGrille}
-              onRelancer={handleRelancer}
-              onDupliquer={handleDupliquer}
-              onDemanderSuppression={handleDemanderSuppression}
-              onAnnulerSuppression={handleAnnulerSuppression}
-              onSupprimer={handleSupprimer}
-              onCopierLien={handleCopierLien}
-              onCloturerEnAttente={handleCloturerEnAttente}
-            />
-          ))}
-        </ul>
+        <>
+          {grillesActives.length > 0 && (
+            <div className="grille-list__section">
+              <p className="grille-list__section-title">Partie en cours - {grillesActives.length}</p>
+              <ul className="grille-list">{grillesActives.map(renderGrilleCard)}</ul>
+            </div>
+          )}
+          {grillesAutres.length > 0 && (
+            <div className="grille-list__section">
+              <p className="grille-list__section-title">Mes grilles - {grillesAutres.length}</p>
+              <ul className="grille-list">{grillesAutres.map(renderGrilleCard)}</ul>
+            </div>
+          )}
+        </>
       )}
 
       {message && <p className="bibliotheque-screen__message">{message}</p>}

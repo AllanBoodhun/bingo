@@ -11,8 +11,21 @@
   font-size: var(--text-display-size);
   font-weight: var(--text-display-weight);
   line-height: var(--text-display-line-height);
-  color: var(--color-terracotta);
+  color: var(--color-ink);
   text-align: center;
+}
+
+.creation-grille-screen__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.creation-grille-screen__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
 }
 
 .creation-grille-screen__counter {
@@ -48,7 +61,7 @@
   font-size: var(--text-body-size);
   color: var(--color-ink);
   background: var(--color-paper-card);
-  border: 1.5px dashed var(--color-line);
+  border: 2px solid var(--color-ink);
   border-radius: var(--radius-default);
   padding: var(--space-2) var(--space-3);
 }
@@ -106,7 +119,7 @@
   font-size: var(--text-body-size);
   color: var(--color-ink);
   background: var(--color-paper-card);
-  border: 1.5px dashed var(--color-line);
+  border: 2px solid var(--color-ink);
   border-radius: var(--radius-default);
   padding: var(--space-2) var(--space-3);
 }
@@ -126,15 +139,15 @@
   background: transparent;
 }
 
+.phrase-list__item--input {
+  display: flex;
+}
+
 .creation-grille-screen__partie {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
-  background: var(--color-paper-card);
-  border: 1.5px dashed var(--color-sage);
-  border-radius: var(--radius-default);
   padding: var(--space-3);
-  transform: rotate(0.4deg);
 }
 
 .creation-grille-screen__partie-titre {

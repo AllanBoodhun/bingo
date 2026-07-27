@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { supabase } from '../../lib/supabase/client'
 import { Button } from '../../components/Button'
 import { lireJoueurPersiste, persisterJoueur, type Joueur } from '../../lib/joueurStorage'
+import { useLienCopie } from '../../lib/useLienCopie'
 import { construireLienPartie } from '../bibliotheque/utils'
 import './PartieActiveScreen.scss'
 
@@ -37,7 +38,7 @@ export function PartieActiveScreen({ codePartie, grilleNom, onRetour, onAccederG
   const [pending, setPending] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [etatTerminal, setEtatTerminal] = useState<EtatTerminal>(null)
-  const [lienCopie, setLienCopie] = useState(false)
+  const { copie: lienCopie, copier: copierLien } = useLienCopie()
 
   const lien = construireLienPartie(codePartie)
 
@@ -99,16 +100,6 @@ export function PartieActiveScreen({ codePartie, grilleNom, onRetour, onAccederG
     }
   }
 
-  async function handleCopierLien() {
-    try {
-      await navigator.clipboard.writeText(lien)
-      setLienCopie(true)
-      setTimeout(() => setLienCopie(false), 2000)
-    } catch {
-      // Échec silencieux toléré : le lien reste affiché et copiable manuellement.
-    }
-  }
-
   // Le montage n'aura duré qu'un instant, le temps que l'effet ci-dessus délègue au
   // parent — rien à afficher, même principe que les autres écrans de l'app pendant un
   // chargement transitoire (ex. GrilleEnDirecteScreen).
@@ -161,7 +152,7 @@ export function PartieActiveScreen({ codePartie, grilleNom, onRetour, onAccederG
       {message && <p className="partie-active-screen__message">{message}</p>}
 
       <p className="partie-active-screen__lien">{lien}</p>
-      <Button type="button" variant="secondary" onClick={handleCopierLien}>
+      <Button type="button" variant="secondary" onClick={() => copierLien(lien)}>
         {lienCopie ? 'Lien copié !' : 'Copier le lien'}
       </Button>
 

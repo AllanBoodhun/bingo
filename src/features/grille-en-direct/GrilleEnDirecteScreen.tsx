@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 import { supabase } from '../../lib/supabase/client'
 import { Button } from '../../components/Button'
+import { useLienCopie } from '../../lib/useLienCopie'
+import { construireLienPartie } from '../bibliotheque/utils'
 import './GrilleEnDirecteScreen.scss'
 
 type Joueur = {
@@ -38,9 +40,15 @@ const TOAST_DUREE_MS = 4000
 
 type GrilleEnDirecteScreenProps = {
   joueur: Joueur
+  codePartie: string
+  // Absent pour un invité arrivé via lien de partie : il n'y a pas de Bibliothèque vers
+  // laquelle revenir (même principe que PartieActiveScreen.onRetour).
+  onRetourBibliotheque?: () => void
 }
 
-export function GrilleEnDirecteScreen({ joueur }: GrilleEnDirecteScreenProps) {
+export function GrilleEnDirecteScreen({ joueur, codePartie, onRetourBibliotheque }: GrilleEnDirecteScreenProps) {
+  const { copie: lienCopie, copier: copierLien } = useLienCopie()
+  const lien = construireLienPartie(codePartie)
   const [cases, setCases] = useState<CaseJoueur[]>([])
   const [joueurs, setJoueurs] = useState<JoueurPartie[]>([])
   const [chargement, setChargement] = useState(true)
@@ -397,6 +405,17 @@ export function GrilleEnDirecteScreen({ joueur }: GrilleEnDirecteScreenProps) {
       <div className="grille-en-direct-screen__header">
         {estTerminee ? <PartieTermineeBadge /> : <LiveBadge />}
         <AvatarStack joueurs={joueurs} />
+      </div>
+
+      <div className="grille-en-direct-screen__actions">
+        <Button type="button" variant="secondary" onClick={() => copierLien(lien)}>
+          {lienCopie ? 'Lien copié !' : 'Copier le lien'}
+        </Button>
+        {onRetourBibliotheque && (
+          <Button type="button" variant="secondary" onClick={onRetourBibliotheque}>
+            Retour à la bibliothèque
+          </Button>
+        )}
       </div>
 
       <p className="grille-en-direct-screen__subtitle">Tu joues sous le nom {joueur.pseudo}</p>

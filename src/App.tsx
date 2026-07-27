@@ -80,7 +80,7 @@ function App() {
 
   if (codePartieRejoint !== null) {
     return joueurRejoint ? (
-      <GrilleEnDirecteScreen joueur={joueurRejoint} />
+      <GrilleEnDirecteScreen joueur={joueurRejoint} codePartie={codePartieRejoint} />
     ) : (
       <PartieActiveScreen codePartie={codePartieRejoint} onAccederGrille={setJoueurRejoint} />
     )
@@ -119,8 +119,18 @@ function App() {
     )
   }
 
-  if (joueurActifInterne) {
-    return <GrilleEnDirecteScreen joueur={joueurActifInterne} />
+  if (joueurActifInterne && partieActiveContexte) {
+    return (
+      <GrilleEnDirecteScreen
+        joueur={joueurActifInterne}
+        codePartie={partieActiveContexte.partie.codePartie}
+        onRetourBibliotheque={() => {
+          setJoueurActifInterne(null)
+          setEcran('bibliotheque')
+          setPartieActiveContexte(null)
+        }}
+      />
+    )
   }
 
   if (ecran === 'partie-active' && partieActiveContexte) {

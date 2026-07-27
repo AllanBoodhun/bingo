@@ -72,6 +72,12 @@
   gap: var(--space-3);
 }
 
+.grille-en-direct-screen__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
 .live-badge {
   display: inline-flex;
   align-items: center;

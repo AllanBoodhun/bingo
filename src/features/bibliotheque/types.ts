@@ -5,12 +5,6 @@ export type Grille = {
   validee: boolean
 }
 
-export type PartieEnAttente = {
-  id: string
-  nom: string
-  lien: string
-}
-
 export type PartieActive = {
   id: string
   codePartie: string

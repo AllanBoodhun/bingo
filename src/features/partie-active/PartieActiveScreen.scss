@@ -1,0 +1,73 @@
+.partie-active-screen {
+  max-width: 360px;
+  margin: 0 auto;
+  padding: var(--space-6) var(--space-screen-margin);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.partie-active-screen__titre {
+  font-size: var(--text-display-size);
+  font-weight: var(--text-display-weight);
+  line-height: var(--text-display-line-height);
+  color: var(--color-terracotta);
+  text-align: center;
+}
+
+.partie-active-screen__form,
+.partie-active-screen__champ {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.partie-active-screen__label {
+  font-size: var(--text-label-caps-size);
+  font-weight: var(--text-label-caps-weight);
+  letter-spacing: var(--text-label-caps-letter-spacing);
+  text-transform: uppercase;
+  color: var(--color-ink-soft);
+}
+
+.partie-active-screen__pseudo {
+  font-size: var(--text-body-size);
+  color: var(--color-ink);
+}
+
+.partie-active-screen__input {
+  font-family: var(--font-family);
+  font-size: var(--text-body-size);
+  color: var(--color-ink);
+  background: var(--color-paper-card);
+  border: 1.5px dashed var(--color-line);
+  border-radius: var(--radius-default);
+  padding: var(--space-2) var(--space-3);
+}
+
+.partie-active-screen__message {
+  font-size: var(--text-body-sm-size);
+  font-weight: var(--text-body-sm-weight);
+  color: var(--color-ink);
+  text-align: center;
+}
+
+.partie-active-screen__lien {
+  font-size: var(--text-body-size);
+  color: var(--color-ink-soft);
+  word-break: break-all;
+  user-select: all;
+}
+
+.partie-active-screen__joueurs {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  color: var(--color-ink);
+}
+
+.partie-active-screen__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}

@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { supabase } from '../../lib/supabase/client'
 import { Button } from '../../components/Button'
 import { BrandMark } from '../../components/BrandMark'
+import { ConfirmDialog } from '../../components/ConfirmDialog'
 import './CreationGrilleScreen.scss'
 
 type Grille = {
@@ -254,7 +255,7 @@ function ComposerPhrases({ grille, onRetourBibliotheque }: ComposerPhrasesProps)
   const [partieDejaLancee, setPartieDejaLancee] = useState(true)
   const [dupliquantPending, setDupliquantPending] = useState(false)
   const [supprimantPending, setSupprimantPending] = useState(false)
-  const [confirmationSuppression, setConfirmationSuppression] = useState(false)
+  const [demandeSuppression, setDemandeSuppression] = useState(false)
 
   const total = taille * taille
   const complete = phrases.length === total
@@ -488,7 +489,7 @@ function ComposerPhrases({ grille, onRetourBibliotheque }: ComposerPhrasesProps)
       setMessage(friendlyErrorMessage())
     } finally {
       setSupprimantPending(false)
-      setConfirmationSuppression(false)
+      setDemandeSuppression(false)
     }
   }
 
@@ -573,20 +574,9 @@ function ComposerPhrases({ grille, onRetourBibliotheque }: ComposerPhrasesProps)
             </Button>
           </>
         )}
-        {confirmationSuppression ? (
-          <>
-            <Button type="button" variant="close-game" disabled={supprimantPending} onClick={handleSupprimer}>
-              Confirmer la suppression ?
-            </Button>
-            <Button type="button" variant="secondary" onClick={() => setConfirmationSuppression(false)}>
-              Annuler
-            </Button>
-          </>
-        ) : (
-          <Button type="button" variant="close-game" onClick={() => setConfirmationSuppression(true)}>
-            Supprimer
-          </Button>
-        )}
+        <Button type="button" variant="close-game" onClick={() => setDemandeSuppression(true)}>
+          Supprimer
+        </Button>
       </div>
 
       <label className="creation-grille-screen__label" htmlFor="nom">
@@ -726,6 +716,17 @@ function ComposerPhrases({ grille, onRetourBibliotheque }: ComposerPhrasesProps)
           Annuler
         </Button>
       </div>
+
+      {demandeSuppression && (
+        <ConfirmDialog
+          titre={`Supprimer ${nom} ?`}
+          message="Cette grille sera définitivement supprimée."
+          confirmLabel="Supprimer"
+          confirmEnCours={supprimantPending}
+          onConfirm={handleSupprimer}
+          onCancel={() => setDemandeSuppression(false)}
+        />
+      )}
     </main>
   )
 }

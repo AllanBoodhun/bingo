@@ -169,7 +169,7 @@ export function DesignSystemScreen() {
       <Section titre="Notifications">
         <div className="ds-notifs">
           <p className="toast ds-preview-static">Karim vient de cocher une case</p>
-          <div className="bibliotheque-screen__rappel ds-preview-static">
+          <div className="card card--accent-sage grille-list__item ds-preview-static">
             Une partie est en cours — reprends où tu en étais.
           </div>
           <div className="vainqueur-overlay ds-preview-static">

@@ -2,9 +2,10 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase/client'
 import { Button } from '../../components/Button'
 import { BrandMark } from '../../components/BrandMark'
+import { ConfirmDialog } from '../../components/ConfirmDialog'
 import { GrilleCard } from './components/GrilleCard'
-import { RappelPartieEnCours } from './components/RappelPartieEnCours'
-import type { Grille, PartieActive, PartieEnAttente } from './types'
+import { PartieEnCoursCard } from './components/PartieEnCoursCard'
+import type { Grille, PartieActive } from './types'
 import { construireLienPartie } from './utils'
 import './BibliothequeScreen.scss'
 
@@ -25,9 +26,10 @@ function nomDeLaCopie(nomSource: string): string {
 type BibliothequeScreenProps = {
   onNouvelleGrille: () => void
   onModifierGrille: (grille: { id: string; nom: string; taille: number }) => void
+  onRejoindrePartie: (grille: Grille, partie: PartieActive) => void
 }
 
-export function BibliothequeScreen({ onNouvelleGrille, onModifierGrille }: BibliothequeScreenProps) {
+export function BibliothequeScreen({ onNouvelleGrille, onModifierGrille, onRejoindrePartie }: BibliothequeScreenProps) {
   const [grilles, setGrilles] = useState<Grille[]>([])
   const [chargement, setChargement] = useState(true)
   const [chargementEchoue, setChargementEchoue] = useState(false)
@@ -38,11 +40,11 @@ export function BibliothequeScreen({ onNouvelleGrille, onModifierGrille }: Bibli
   const [lancementIds, setLancementIds] = useState<Set<string>>(new Set())
   const [liensPartie, setLiensPartie] = useState<Record<string, string>>({})
   const [liensCopies, setLiensCopies] = useState<Set<string>>(new Set())
-  const [partiesEnAttente, setPartiesEnAttente] = useState<PartieEnAttente[]>([])
   const [partiesActivesParGrille, setPartiesActivesParGrille] = useState<Record<string, PartieActive[]>>({})
-  const [clotureEnAttenteIds, setClotureEnAttenteIds] = useState<Set<string>>(new Set())
-  const [suppressionConfirmIds, setSuppressionConfirmIds] = useState<Set<string>>(new Set())
-  const [supprimantIds, setSupprimantIds] = useState<Set<string>>(new Set())
+  const [confirmation, setConfirmation] = useState<
+    { type: 'suppression'; grille: Grille } | { type: 'cloture'; partieId: string; grilleNom: string } | null
+  >(null)
+  const [confirmationEnCours, setConfirmationEnCours] = useState(false)
 
   useEffect(() => {
     let ignore = false
@@ -51,7 +53,6 @@ export function BibliothequeScreen({ onNouvelleGrille, onModifierGrille }: Bibli
     setChargementEchoue(false)
     setGrilles([])
     setMessage(null)
-    setPartiesEnAttente([])
     setPartiesActivesParGrille({})
 
     async function charger() {
@@ -165,39 +166,6 @@ export function BibliothequeScreen({ onNouvelleGrille, onModifierGrille }: Bibli
             parGrille[p.grille_id] = liste
           }
           setPartiesActivesParGrille(parGrille)
-        }
-
-        // Rappel de partie en cours (FR-14) : chargement séquentiel supplémentaire,
-        // dégradation silencieuse en cas d'échec (pas de bannière), jamais un blocage
-        // de tout l'écran — même principe que les requêtes secondaires de
-        // GrilleEnDirecteScreen. Filtre explicite par compte_id requis (revue de code) :
-        // les policies RLS s'additionnent par OR, la policy "Joueur lit les vainqueurs de
-        // sa partie" (Story 2.4) reste active en plus de la nouvelle policy créateur —
-        // sans ce filtre, un joueur non-créateur ayant rejoint la partie d'un ami avec
-        // son propre compte verrait aussi cette bannière dans sa propre Bibliothèque.
-        const {
-          data: { user },
-        } = await supabase.auth.getUser()
-        const { data: rappelsData, error: rappelsError } = await supabase
-          .from('parties_vainqueurs')
-          .select('parties!inner(id, code_partie, statut, grilles!inner(nom, compte_id))')
-          .eq('parties.statut', 'en_cours')
-          .eq('parties.grilles.compte_id', user?.id ?? '')
-
-        if (ignore) return
-
-        if (!rappelsError && rappelsData) {
-          // Dédupliqué par partie.id : une partie à plusieurs co-vainqueurs (Story 2.4)
-          // produit une ligne parties_vainqueurs par vainqueur, la bannière ne doit
-          // lister chaque partie en attente qu'une seule fois.
-          const dedup = new Map<string, PartieEnAttente>()
-          for (const row of rappelsData as unknown as Array<{
-            parties: { id: string; code_partie: string; grilles: { nom: string } }
-          }>) {
-            const { id, code_partie, grilles: g } = row.parties
-            dedup.set(id, { id, nom: g.nom, lien: construireLienPartie(code_partie) })
-          }
-          setPartiesEnAttente([...dedup.values()])
         }
       } catch {
         if (!ignore) {
@@ -330,10 +298,7 @@ export function BibliothequeScreen({ onNouvelleGrille, onModifierGrille }: Bibli
     }
   }
 
-  async function handleCloturerEnAttente(partieId: string) {
-    setClotureEnAttenteIds((current) => new Set(current).add(partieId))
-    setMessage(null)
-
+  async function cloturerPartie(partieId: string) {
     try {
       // `.select()` force la représentation de la ligne modifiée : même piège que
       // `handleCloturer` de GrilleEnDirecteScreen (Story 2.5) — un update filtré en
@@ -350,7 +315,6 @@ export function BibliothequeScreen({ onNouvelleGrille, onModifierGrille }: Bibli
         return
       }
 
-      setPartiesEnAttente((current) => current.filter((p) => p.id !== partieId))
       setPartiesActivesParGrille((current) => {
         const next: Record<string, PartieActive[]> = {}
         for (const [grilleId, liste] of Object.entries(current)) {
@@ -361,31 +325,10 @@ export function BibliothequeScreen({ onNouvelleGrille, onModifierGrille }: Bibli
       })
     } catch {
       setMessage(friendlyErrorMessage())
-    } finally {
-      setClotureEnAttenteIds((current) => {
-        const next = new Set(current)
-        next.delete(partieId)
-        return next
-      })
     }
   }
 
-  function handleDemanderSuppression(grilleId: string) {
-    setSuppressionConfirmIds((current) => new Set(current).add(grilleId))
-  }
-
-  function handleAnnulerSuppression(grilleId: string) {
-    setSuppressionConfirmIds((current) => {
-      const next = new Set(current)
-      next.delete(grilleId)
-      return next
-    })
-  }
-
-  async function handleSupprimer(grille: Grille) {
-    setSupprimantIds((current) => new Set(current).add(grille.id))
-    setMessage(null)
-
+  async function supprimerGrille(grille: Grille) {
     try {
       // `.select()` force la représentation de la ligne supprimée : même piège que
       // handleCloturer/handleToggle — un delete filtré en silence par RLS renverrait
@@ -400,18 +343,35 @@ export function BibliothequeScreen({ onNouvelleGrille, onModifierGrille }: Bibli
       setGrilles((current) => current.filter((g) => g.id !== grille.id))
     } catch {
       setMessage(friendlyErrorMessage())
-    } finally {
-      setSupprimantIds((current) => {
-        const next = new Set(current)
-        next.delete(grille.id)
-        return next
-      })
-      setSuppressionConfirmIds((current) => {
-        const next = new Set(current)
-        next.delete(grille.id)
-        return next
-      })
     }
+  }
+
+  function handleDemanderSuppression(grille: Grille) {
+    setConfirmation({ type: 'suppression', grille })
+  }
+
+  function handleDemanderCloture(partieId: string, grilleNom: string) {
+    setConfirmation({ type: 'cloture', partieId, grilleNom })
+  }
+
+  function handleAnnulerConfirmation() {
+    if (confirmationEnCours) return
+    setConfirmation(null)
+  }
+
+  async function handleConfirmer() {
+    if (!confirmation) return
+    setConfirmationEnCours(true)
+    setMessage(null)
+
+    if (confirmation.type === 'suppression') {
+      await supprimerGrille(confirmation.grille)
+    } else {
+      await cloturerPartie(confirmation.partieId)
+    }
+
+    setConfirmationEnCours(false)
+    setConfirmation(null)
   }
 
   if (chargement) {
@@ -429,8 +389,14 @@ export function BibliothequeScreen({ onNouvelleGrille, onModifierGrille }: Bibli
     )
   }
 
-  const grillesActives = grilles.filter((g) => (partiesActivesParGrille[g.id] ?? []).length > 0)
-  const grillesAutres = grilles.filter((g) => (partiesActivesParGrille[g.id] ?? []).length === 0)
+  // Une seule catégorie "Partie en cours" pour toute partie encore `en_cours` en base,
+  // qu'un vainqueur ait été déclaré ou non (Terminée = en attente de clôture) — le
+  // statut distingue les deux au sein d'une même card, plus de double affichage.
+  // "Mes grilles" liste ensuite systématiquement toutes les grilles, actives ou non,
+  // pour permettre de relancer une partie sur n'importe quel modèle.
+  const partiesEnCours = grilles.flatMap((grille) =>
+    (partiesActivesParGrille[grille.id] ?? []).map((partie) => ({ grille, partie })),
+  )
 
   function renderGrilleCard(grille: Grille) {
     return (
@@ -439,20 +405,13 @@ export function BibliothequeScreen({ onNouvelleGrille, onModifierGrille }: Bibli
         grille={grille}
         lienPartie={liensPartie[grille.id]}
         liensCopies={liensCopies}
-        partiesActives={partiesActivesParGrille[grille.id] ?? []}
         lancementEnCours={lancementIds.has(grille.id)}
         dupliquantEnCours={dupliquantIds.has(grille.id)}
-        confirmationSuppression={suppressionConfirmIds.has(grille.id)}
-        suppressionEnCours={supprimantIds.has(grille.id)}
-        clotureEnAttenteIds={clotureEnAttenteIds}
         onModifierGrille={onModifierGrille}
         onRelancer={handleRelancer}
         onDupliquer={handleDupliquer}
         onDemanderSuppression={handleDemanderSuppression}
-        onAnnulerSuppression={handleAnnulerSuppression}
-        onSupprimer={handleSupprimer}
         onCopierLien={handleCopierLien}
-        onCloturerEnAttente={handleCloturerEnAttente}
       />
     )
   }
@@ -465,32 +424,31 @@ export function BibliothequeScreen({ onNouvelleGrille, onModifierGrille }: Bibli
       <Button type="button" variant="primary" onClick={onNouvelleGrille}>
         Nouvelle grille
       </Button>
-      {partiesEnAttente.length > 0 && (
-        <RappelPartieEnCours
-          parties={partiesEnAttente}
-          liensCopies={liensCopies}
-          onCopierLien={handleCopierLien}
-          clotureEnAttenteIds={clotureEnAttenteIds}
-          onCloturer={handleCloturerEnAttente}
-        />
-      )}
 
       {grilles.length === 0 ? (
         <p className="bibliotheque-screen__subtitle">Crée ta première grille pour commencer !</p>
       ) : (
         <>
-          {grillesActives.length > 0 && (
+          {partiesEnCours.length > 0 && (
             <div className="grille-list__section">
-              <p className="grille-list__section-title">Partie en cours - {grillesActives.length}</p>
-              <ul className="grille-list">{grillesActives.map(renderGrilleCard)}</ul>
+              <p className="grille-list__section-title">Partie en cours - {partiesEnCours.length}</p>
+              <ul className="grille-list">
+                {partiesEnCours.map(({ grille, partie }) => (
+                  <PartieEnCoursCard
+                    key={partie.id}
+                    grille={grille}
+                    partie={partie}
+                    onRejoindrePartie={onRejoindrePartie}
+                    onDemanderCloture={handleDemanderCloture}
+                  />
+                ))}
+              </ul>
             </div>
           )}
-          {grillesAutres.length > 0 && (
-            <div className="grille-list__section">
-              <p className="grille-list__section-title">Mes grilles - {grillesAutres.length}</p>
-              <ul className="grille-list">{grillesAutres.map(renderGrilleCard)}</ul>
-            </div>
-          )}
+          <div className="grille-list__section">
+            <p className="grille-list__section-title">Mes grilles - {grilles.length}</p>
+            <ul className="grille-list">{grilles.map(renderGrilleCard)}</ul>
+          </div>
         </>
       )}
 
@@ -498,6 +456,21 @@ export function BibliothequeScreen({ onNouvelleGrille, onModifierGrille }: Bibli
       <Button type="button" variant="secondary" disabled={signingOut} onClick={handleSignOut}>
         Me déconnecter
       </Button>
+
+      {confirmation && (
+        <ConfirmDialog
+          titre={confirmation.type === 'suppression' ? `Supprimer ${confirmation.grille.nom} ?` : 'Clôturer la partie ?'}
+          message={
+            confirmation.type === 'suppression'
+              ? 'Cette grille sera définitivement supprimée.'
+              : `Les joueurs de "${confirmation.grilleNom}" ne pourront plus rejoindre cette partie.`
+          }
+          confirmLabel={confirmation.type === 'suppression' ? 'Supprimer' : 'Clôturer'}
+          confirmEnCours={confirmationEnCours}
+          onConfirm={handleConfirmer}
+          onCancel={handleAnnulerConfirmation}
+        />
+      )}
     </main>
   )
 }

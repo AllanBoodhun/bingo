@@ -2,20 +2,17 @@ import { useEffect, useState } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import './App.scss'
 import { supabase, supabaseConfigError } from './lib/supabase/client'
+import { lireJoueurPersiste, persisterJoueur, type Joueur } from './lib/joueurStorage'
 import { AuthScreen } from './features/auth/AuthScreen'
 import { BibliothequeScreen } from './features/bibliotheque/BibliothequeScreen'
 import { CreationGrilleScreen } from './features/creation-grille/CreationGrilleScreen'
 import { RejoindrePartieScreen } from './features/rejoindre-partie/RejoindrePartieScreen'
 import { GrilleEnDirecteScreen } from './features/grille-en-direct/GrilleEnDirecteScreen'
+import { PartieActiveScreen } from './features/partie-active/PartieActiveScreen'
 import { DesignSystemScreen } from './features/design-system/DesignSystemScreen'
+import type { Grille, PartieActive } from './features/bibliotheque/types'
 
-type Ecran = 'bibliotheque' | 'creation-grille'
-
-type Joueur = {
-  id: string
-  pseudo: string
-  partieId: string
-}
+type Ecran = 'bibliotheque' | 'creation-grille' | 'partie-active'
 
 type GrilleAEditer = {
   id: string
@@ -27,38 +24,6 @@ function lireCodePartieDepuisURL(): string | null {
   return new URLSearchParams(window.location.search).get('partie')
 }
 
-// Complète AD-5 ("la session est conservée côté client... et survit au rechargement") :
-// la session Supabase Auth elle-même persiste déjà nativement en localStorage, mais le
-// `joueur` retourné par `rejoindre_partie` (id/pseudo/partieId) ne vivait jusqu'ici qu'en
-// mémoire React (Story 2.2, décision documentée "un rechargement de page redemandera donc
-// le pseudo... assumé") — un simple rechargement de page renvoyait donc systématiquement
-// vers l'écran de saisie du pseudo, même si `rejoindre_partie` restait idempotent côté
-// serveur (aucun doublon créé, juste une étape confuse et inutile pour l'utilisateur).
-const JOUEUR_STORAGE_PREFIX = 'bingo:joueur:'
-
-function lireJoueurPersiste(codePartie: string): Joueur | null {
-  try {
-    const brut = localStorage.getItem(JOUEUR_STORAGE_PREFIX + codePartie)
-    if (!brut) return null
-    const valeur = JSON.parse(brut) as Partial<Joueur>
-    if (typeof valeur.id === 'string' && typeof valeur.pseudo === 'string' && typeof valeur.partieId === 'string') {
-      return { id: valeur.id, pseudo: valeur.pseudo, partieId: valeur.partieId }
-    }
-    return null
-  } catch {
-    return null
-  }
-}
-
-function persisterJoueur(codePartie: string, joueur: Joueur) {
-  try {
-    localStorage.setItem(JOUEUR_STORAGE_PREFIX + codePartie, JSON.stringify(joueur))
-  } catch {
-    // Échec silencieux toléré (ex. stockage désactivé/plein) : la saisie du pseudo
-    // reste disponible comme repli à chaque rechargement, idempotente côté serveur.
-  }
-}
-
 function App() {
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
@@ -68,6 +33,10 @@ function App() {
     codePartieRejoint ? lireJoueurPersiste(codePartieRejoint) : null,
   )
   const [grilleAEditer, setGrilleAEditer] = useState<GrilleAEditer | null>(null)
+  const [partieActiveContexte, setPartieActiveContexte] = useState<{ grille: Grille; partie: PartieActive } | null>(
+    null,
+  )
+  const [joueurActifInterne, setJoueurActifInterne] = useState<Joueur | null>(null)
 
   useEffect(() => {
     if (supabaseConfigError) {
@@ -154,6 +123,26 @@ function App() {
     )
   }
 
+  if (joueurActifInterne) {
+    return <GrilleEnDirecteScreen joueur={joueurActifInterne} />
+  }
+
+  if (ecran === 'partie-active' && partieActiveContexte) {
+    return (
+      <PartieActiveScreen
+        grilleNom={partieActiveContexte.grille.nom}
+        codePartie={partieActiveContexte.partie.codePartie}
+        onRetour={() => {
+          setEcran('bibliotheque')
+          setPartieActiveContexte(null)
+        }}
+        onAccederGrille={(joueur) => {
+          setJoueurActifInterne(joueur)
+        }}
+      />
+    )
+  }
+
   return (
     <BibliothequeScreen
       onNouvelleGrille={() => {
@@ -163,6 +152,10 @@ function App() {
       onModifierGrille={(grille) => {
         setGrilleAEditer(grille)
         setEcran('creation-grille')
+      }}
+      onRejoindrePartie={(grille, partie) => {
+        setPartieActiveContexte({ grille, partie })
+        setEcran('partie-active')
       }}
     />
   )

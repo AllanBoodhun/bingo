@@ -6,7 +6,6 @@ import { ConfirmDialog } from '../../components/ConfirmDialog'
 import { GrilleCard } from './components/GrilleCard'
 import { PartieEnCoursCard } from './components/PartieEnCoursCard'
 import type { Grille, PartieActive } from './types'
-import { construireLienPartie } from './utils'
 import './BibliothequeScreen.scss'
 
 function friendlyErrorMessage(): string {
@@ -38,8 +37,6 @@ export function BibliothequeScreen({ onNouvelleGrille, onModifierGrille, onRejoi
   const [message, setMessage] = useState<string | null>(null)
   const [dupliquantIds, setDupliquantIds] = useState<Set<string>>(new Set())
   const [lancementIds, setLancementIds] = useState<Set<string>>(new Set())
-  const [liensPartie, setLiensPartie] = useState<Record<string, string>>({})
-  const [liensCopies, setLiensCopies] = useState<Set<string>>(new Set())
   const [partiesActivesParGrille, setPartiesActivesParGrille] = useState<Record<string, PartieActive[]>>({})
   const [confirmation, setConfirmation] = useState<
     { type: 'suppression'; grille: Grille } | { type: 'cloture'; partieId: string; grilleNom: string } | null
@@ -270,7 +267,12 @@ export function BibliothequeScreen({ onNouvelleGrille, onModifierGrille, onRejoi
         return
       }
 
-      setLiensPartie((current) => ({ ...current, [grille.id]: construireLienPartie(data.code_partie) }))
+      onRejoindrePartie(grille, {
+        id: data.id,
+        codePartie: data.code_partie,
+        nombreJoueurs: 0,
+        vainqueurs: [],
+      })
     } catch {
       setMessage(friendlyErrorMessage())
     } finally {
@@ -279,22 +281,6 @@ export function BibliothequeScreen({ onNouvelleGrille, onModifierGrille, onRejoi
         next.delete(grille.id)
         return next
       })
-    }
-  }
-
-  async function handleCopierLien(grilleId: string, lien: string) {
-    try {
-      await navigator.clipboard.writeText(lien)
-      setLiensCopies((current) => new Set(current).add(grilleId))
-      setTimeout(() => {
-        setLiensCopies((current) => {
-          const next = new Set(current)
-          next.delete(grilleId)
-          return next
-        })
-      }, 2000)
-    } catch {
-      // Échec silencieux toléré : le lien reste affiché et copiable manuellement.
     }
   }
 
@@ -403,15 +389,12 @@ export function BibliothequeScreen({ onNouvelleGrille, onModifierGrille, onRejoi
       <GrilleCard
         key={grille.id}
         grille={grille}
-        lienPartie={liensPartie[grille.id]}
-        liensCopies={liensCopies}
         lancementEnCours={lancementIds.has(grille.id)}
         dupliquantEnCours={dupliquantIds.has(grille.id)}
         onModifierGrille={onModifierGrille}
         onRelancer={handleRelancer}
         onDupliquer={handleDupliquer}
         onDemanderSuppression={handleDemanderSuppression}
-        onCopierLien={handleCopierLien}
       />
     )
   }

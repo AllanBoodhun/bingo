@@ -1,31 +1,24 @@
 import { Button } from '../../../components/Button'
 import type { Grille } from '../types'
-import { PartieLienCard } from './PartieLienCard'
 
 type GrilleCardProps = {
   grille: Grille
-  lienPartie: string | undefined
-  liensCopies: Set<string>
   lancementEnCours: boolean
   dupliquantEnCours: boolean
   onModifierGrille: (grille: { id: string; nom: string; taille: number }) => void
   onRelancer: (grille: Grille) => void
   onDupliquer: (grille: Grille) => void
   onDemanderSuppression: (grille: Grille) => void
-  onCopierLien: (id: string, lien: string) => void
 }
 
 export function GrilleCard({
   grille,
-  lienPartie,
-  liensCopies,
   lancementEnCours,
   dupliquantEnCours,
   onModifierGrille,
   onRelancer,
   onDupliquer,
   onDemanderSuppression,
-  onCopierLien,
 }: GrilleCardProps) {
   return (
     <li className="card grille-list__item">
@@ -75,17 +68,6 @@ export function GrilleCard({
           Supprimer
         </Button>
       </div>
-      {lienPartie && (
-        <div className="card card--accent-sage grille-list__partie">
-          <p className="grille-list__partie-titre">Ta partie est prête ! Partage ce lien :</p>
-          <PartieLienCard
-            id={grille.id}
-            lien={lienPartie}
-            lienCopie={liensCopies.has(grille.id)}
-            onCopierLien={onCopierLien}
-          />
-        </div>
-      )}
     </li>
   )
 }

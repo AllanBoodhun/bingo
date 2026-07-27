@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabase/client'
 import { Button } from '../../components/Button'
 import { BrandMark } from '../../components/BrandMark'
 import { ConfirmDialog } from '../../components/ConfirmDialog'
+import type { Grille as GrilleBibliotheque, PartieActive } from '../bibliotheque/types'
 import './CreationGrilleScreen.scss'
 
 type Grille = {
@@ -26,13 +27,18 @@ function friendlyErrorMessage(): string {
 type CreationGrilleScreenProps = {
   grilleInitiale?: Grille | null
   onRetourBibliotheque: () => void
+  onPartieLancee: (grille: GrilleBibliotheque, partie: PartieActive) => void
 }
 
-export function CreationGrilleScreen({ grilleInitiale = null, onRetourBibliotheque }: CreationGrilleScreenProps) {
+export function CreationGrilleScreen({
+  grilleInitiale = null,
+  onRetourBibliotheque,
+  onPartieLancee,
+}: CreationGrilleScreenProps) {
   const [grille, setGrille] = useState<Grille | null>(grilleInitiale)
 
   return grille ? (
-    <ComposerPhrases grille={grille} onRetourBibliotheque={onRetourBibliotheque} />
+    <ComposerPhrases grille={grille} onRetourBibliotheque={onRetourBibliotheque} onPartieLancee={onPartieLancee} />
   ) : (
     <NouvelleGrilleForm onCreated={setGrille} onRetourBibliotheque={onRetourBibliotheque} />
   )
@@ -217,17 +223,10 @@ function NouvelleGrilleForm({ onCreated, onRetourBibliotheque }: NouvelleGrilleF
 type ComposerPhrasesProps = {
   grille: Grille
   onRetourBibliotheque: () => void
+  onPartieLancee: (grille: GrilleBibliotheque, partie: PartieActive) => void
 }
 
-type PartieLancee = {
-  lien: string
-}
-
-function construireLienPartie(codePartie: string): string {
-  return `${window.location.origin}?partie=${codePartie}`
-}
-
-function ComposerPhrases({ grille, onRetourBibliotheque }: ComposerPhrasesProps) {
+function ComposerPhrases({ grille, onRetourBibliotheque, onPartieLancee }: ComposerPhrasesProps) {
   const [phrases, setPhrases] = useState<Phrase[]>([])
   const [chargement, setChargement] = useState(true)
   const [chargementEchoue, setChargementEchoue] = useState(false)
@@ -239,8 +238,6 @@ function ComposerPhrases({ grille, onRetourBibliotheque }: ComposerPhrasesProps)
   const [editingTexte, setEditingTexte] = useState('')
   const [lancementPending, setLancementPending] = useState(false)
   const [lancementMessage, setLancementMessage] = useState<string | null>(null)
-  const [partieLancee, setPartieLancee] = useState<PartieLancee | null>(null)
-  const [lienCopie, setLienCopie] = useState(false)
   const [nom, setNom] = useState(grille.nom)
   const [taille, setTaille] = useState(grille.taille)
   const [nomEnEdition, setNomEnEdition] = useState(grille.nom)
@@ -352,21 +349,14 @@ function ComposerPhrases({ grille, onRetourBibliotheque }: ComposerPhrasesProps)
         return
       }
 
-      setPartieLancee({ lien: construireLienPartie(data.code_partie) })
+      onPartieLancee(
+        { id: grille.id, nom, taille, validee: true },
+        { id: data.id, codePartie: data.code_partie, nombreJoueurs: 0, vainqueurs: [] },
+      )
     } catch {
       setLancementMessage(friendlyErrorMessage())
     } finally {
       setLancementPending(false)
-    }
-  }
-
-  async function handleCopierLien(lien: string) {
-    try {
-      await navigator.clipboard.writeText(lien)
-      setLienCopie(true)
-      setTimeout(() => setLienCopie(false), 2000)
-    } catch {
-      // Échec silencieux toléré : le lien reste affiché et copiable manuellement.
     }
   }
 
@@ -621,29 +611,6 @@ function ComposerPhrases({ grille, onRetourBibliotheque }: ComposerPhrasesProps)
       {complete && <p className="creation-grille-screen__complete">Ta grille est complète !</p>}
       {lancementMessage && <p className="creation-grille-screen__message">{lancementMessage}</p>}
       {message && <p className="creation-grille-screen__message">{message}</p>}
-
-      {partieLancee && (
-        <div className="card card--accent-sage creation-grille-screen__partie">
-          <p className="creation-grille-screen__partie-titre">Ta partie est prête ! Partage ce lien :</p>
-          <p className="creation-grille-screen__lien">{partieLancee.lien}</p>
-          <Button
-            type="button"
-            variant="primary"
-            onClick={() => {
-              window.location.href = partieLancee.lien
-            }}
-          >
-            Rejoindre maintenant
-          </Button>
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={() => handleCopierLien(partieLancee.lien)}
-          >
-            {lienCopie ? 'Lien copié !' : 'Copier le lien'}
-          </Button>
-        </div>
-      )}
 
       <ul className="phrase-list">
         {phrases.map((phrase) =>

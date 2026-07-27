@@ -85,24 +85,3 @@
   gap: var(--space-2);
 }
 
-.grille-list__partie {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  padding: var(--space-3);
-}
-
-.grille-list__partie-titre {
-  text-align: left;
-  font-size: var(--text-body-sm-size);
-  font-weight: var(--text-body-sm-weight);
-  color: var(--color-ink);
-}
-
-.grille-list__lien {
-  text-align: left;
-  font-size: var(--text-body-size);
-  color: var(--color-ink-soft);
-  word-break: break-all;
-  user-select: all;
-}

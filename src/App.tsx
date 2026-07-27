@@ -2,11 +2,10 @@ import { useEffect, useState } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import './App.scss'
 import { supabase, supabaseConfigError } from './lib/supabase/client'
-import { lireJoueurPersiste, persisterJoueur, type Joueur } from './lib/joueurStorage'
+import type { Joueur } from './lib/joueurStorage'
 import { AuthScreen } from './features/auth/AuthScreen'
 import { BibliothequeScreen } from './features/bibliotheque/BibliothequeScreen'
 import { CreationGrilleScreen } from './features/creation-grille/CreationGrilleScreen'
-import { RejoindrePartieScreen } from './features/rejoindre-partie/RejoindrePartieScreen'
 import { GrilleEnDirecteScreen } from './features/grille-en-direct/GrilleEnDirecteScreen'
 import { PartieActiveScreen } from './features/partie-active/PartieActiveScreen'
 import { DesignSystemScreen } from './features/design-system/DesignSystemScreen'
@@ -29,9 +28,7 @@ function App() {
   const [loading, setLoading] = useState(true)
   const [ecran, setEcran] = useState<Ecran>('bibliotheque')
   const [codePartieRejoint] = useState<string | null>(() => lireCodePartieDepuisURL())
-  const [joueurRejoint, setJoueurRejoint] = useState<Joueur | null>(() =>
-    codePartieRejoint ? lireJoueurPersiste(codePartieRejoint) : null,
-  )
+  const [joueurRejoint, setJoueurRejoint] = useState<Joueur | null>(null)
   const [grilleAEditer, setGrilleAEditer] = useState<GrilleAEditer | null>(null)
   const [partieActiveContexte, setPartieActiveContexte] = useState<{ grille: Grille; partie: PartieActive } | null>(
     null,
@@ -85,13 +82,7 @@ function App() {
     return joueurRejoint ? (
       <GrilleEnDirecteScreen joueur={joueurRejoint} />
     ) : (
-      <RejoindrePartieScreen
-        codePartie={codePartieRejoint}
-        onRejoint={(joueur) => {
-          persisterJoueur(codePartieRejoint, joueur)
-          setJoueurRejoint(joueur)
-        }}
-      />
+      <PartieActiveScreen codePartie={codePartieRejoint} onAccederGrille={setJoueurRejoint} />
     )
   }
 
@@ -99,7 +90,7 @@ function App() {
     return null
   }
 
-  // Une session invité (anonyme, créée via signInAnonymously() dans RejoindrePartieScreen)
+  // Une session invité (anonyme, créée via signInAnonymously() dans PartieActiveScreen)
   // est traitée comme "pas de session" pour l'accès à la Bibliothèque/Création de grille —
   // ces surfaces sont réservées aux comptes permanents (FR-19). Ne jamais appeler signOut()
   // ici : détruire la session casserait la reconnexion (Story 2.6) et l'idempotence de
@@ -118,6 +109,11 @@ function App() {
         onRetourBibliotheque={() => {
           setEcran('bibliotheque')
           setGrilleAEditer(null)
+        }}
+        onPartieLancee={(grille, partie) => {
+          setGrilleAEditer(null)
+          setPartieActiveContexte({ grille, partie })
+          setEcran('partie-active')
         }}
       />
     )

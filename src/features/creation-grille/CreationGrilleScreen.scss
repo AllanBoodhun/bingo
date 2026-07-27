@@ -142,23 +142,3 @@
 .phrase-list__item--input {
   display: flex;
 }
-
-.creation-grille-screen__partie {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  padding: var(--space-3);
-}
-
-.creation-grille-screen__partie-titre {
-  font-size: var(--text-body-sm-size);
-  font-weight: var(--text-body-sm-weight);
-  color: var(--color-ink);
-}
-
-.creation-grille-screen__lien {
-  font-size: var(--text-body-size);
-  color: var(--color-ink-soft);
-  word-break: break-all;
-  user-select: all;
-}

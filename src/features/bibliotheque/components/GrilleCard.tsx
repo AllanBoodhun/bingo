@@ -18,10 +18,8 @@ type GrilleCardProps = {
 export function GrilleCard({
   grille,
   lancementEnCours,
-  dupliquantEnCours,
   onModifierGrille,
   onRelancer,
-  onDupliquer,
   onDemanderSuppression,
 }: GrilleCardProps) {
   return (

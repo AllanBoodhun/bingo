@@ -36,21 +36,7 @@
   padding: var(--space-2) var(--space-3);
 }
 
-.grille-list__row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2);
-}
 
-.grille-list__nom {
-  text-align: left;
-}
-
-.grille-list__taille {
-  font-size: var(--text-body-sm-size);
-  color: var(--color-ink-soft);
-}
 
 .grille-list__section-title {
   text-align: left;
@@ -58,7 +44,7 @@
   font-weight: var(--text-label-caps-weight);
   letter-spacing: var(--text-label-caps-letter-spacing);
   text-transform: uppercase;
-  color: var(--color-ink-soft);
+  color: var(--color-black);
   margin: 0;
 }
 

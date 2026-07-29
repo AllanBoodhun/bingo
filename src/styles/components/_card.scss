@@ -1,10 +1,69 @@
 .card {
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
   background: var(--color-paper-card);
   border: 2px solid var(--color-ink);
   border-radius: var(--radius-default);
   box-shadow: 3px 3px 0 var(--color-ink);
+  padding: var(--space-3);
+
+  &__en-cours {
+    background: color-mix(in srgb, var(--color-sage) 18%, var(--color-paper-card));
+  }
 }
 
-.card--accent-sage {
-  background: color-mix(in srgb, var(--color-sage) 18%, var(--color-paper-card));
+.card__item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  font-size: var(--text-body-size);
+  color: var(--color-ink);
+  padding: var(--space-2) var(--space-3);
+}
+
+.card__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.card__nom {
+  text-align: left;
+  font-size: var(--text-body-size);
+  font-weight: var(--text-label-caps-weight);
+  color: var(--color-black);
+}
+
+.card__taille {
+  font-size: var(--text-body-sm-size);
+  color: var(--color-ink-soft);
+}
+
+.card__section-title {
+  text-align: left;
+  font-size: var(--text-label-caps-size);
+  font-weight: var(--text-label-caps-weight);
+  letter-spacing: var(--text-label-caps-letter-spacing);
+  text-transform: uppercase;
+  color: var(--color-black);
+  margin: 0;
+}
+
+.card__section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  width: 100%;
+}
+
+.card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  & > * {
+    flex: 1;
+  }
 }

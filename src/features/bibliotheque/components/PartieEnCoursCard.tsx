@@ -17,28 +17,29 @@ export function PartieEnCoursCard({
   const estTerminee = partie.vainqueurs.length > 0
 
   return (
-    <li className="card card--accent-sage grille-list__item">
-      <div className="grille-list__row">
-        <span className="grille-list__nom">{grille.nom}</span>
+    <li className="card card__en-cours">
+      <div className="card__row">
+        <span className="card__nom">{grille.nom}</span>
         <span className="status-chip">
           <span className="status-chip__dot" />
           {estTerminee ? 'Terminée' : 'En cours'}
         </span>
       </div>
-      <div className="grille-list__row">
-        <span className="grille-list__taille">
+      <div className="card__row">
+        <span className="card__taille">
           {grille.taille}×{grille.taille} - {partie.nombreJoueurs} joueur{partie.nombreJoueurs > 1 ? 's' : ''}
         </span>
         {estTerminee && (
-          <span className="grille-list__taille">
+          <span className="card__taille">
             Vainqueur : <strong>{partie.vainqueurs.join(', ')}</strong>
           </span>
         )}
       </div>
-      <div className="grille-list__actions">
+      <div className="card__actions">
         <Button
           type="button"
-          variant="primary"
+          variant="secondary"
+          color="filledRed"
           aria-label={`Rejoindre la partie de ${grille.nom}`}
           onClick={() => onRejoindrePartie(grille, partie)}
         >
@@ -46,7 +47,8 @@ export function PartieEnCoursCard({
         </Button>
         <Button
           type="button"
-          variant="close-game"
+          variant="secondary"
+          color="filledBlack"
           aria-label={`Clôturer la partie de ${grille.nom}`}
           onClick={() => onDemanderCloture(partie.id, grille.nom)}
         >

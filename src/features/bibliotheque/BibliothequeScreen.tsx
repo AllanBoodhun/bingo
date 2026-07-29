@@ -307,7 +307,7 @@ export function BibliothequeScreen({
       const { data: phrasesSource, error: phrasesError } = await phrasesService.listerTextesPhrases(grille.id)
 
       if (phrasesError || !phrasesSource) {
-        await grillesService.annulerCreationGrille(nouvelleGrilleId)
+        await grillesService.annulerCreationGrille(nouvelleGrilleId!)
         setMessage(friendlyErrorMessage())
         return
       }
@@ -318,7 +318,7 @@ export function BibliothequeScreen({
         )
 
         if (insertError) {
-          await grillesService.annulerCreationGrille(nouvelleGrilleId)
+          await grillesService.annulerCreationGrille(nouvelleGrilleId!)
           setMessage(friendlyErrorMessage())
           return
         }
@@ -484,7 +484,7 @@ export function BibliothequeScreen({
       <h1 className="sr-only">Bibliothèque</h1>
       <BrandMark />
 
-      <Button type="button" variant="primary" onClick={onNouvelleGrille}>
+      <Button type="button" variant="primaryXL" icon="/plus.svg" onClick={onNouvelleGrille}>
         Nouvelle grille
       </Button>
 
@@ -544,7 +544,7 @@ export function BibliothequeScreen({
       )}
 
       {message && <p className="bibliotheque-screen__message">{message}</p>}
-      <Button type="button" variant="secondary" disabled={signingOut} onClick={handleSignOut}>
+      <Button type="button" variant="primaryXL" color="filledBlack" disabled={signingOut} onClick={handleSignOut}>
         Me déconnecter
       </Button>
 

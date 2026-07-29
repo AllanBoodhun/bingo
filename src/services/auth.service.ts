@@ -1,3 +1,4 @@
+import type { AuthChangeEvent, Session } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase/client'
 
 export { nettoyerJoueursInvite } from '../lib/supabase/client'
@@ -6,7 +7,7 @@ export function obtenirSession() {
   return supabase.auth.getSession()
 }
 
-export function ecouterChangementsAuth(callback: Parameters<typeof supabase.auth.onAuthStateChange>[0]) {
+export function ecouterChangementsAuth(callback: (event: AuthChangeEvent, session: Session | null) => void) {
   return supabase.auth.onAuthStateChange(callback)
 }
 

@@ -104,7 +104,7 @@ function NouvelleGrilleForm({ onCreated, onRetourBibliotheque }: NouvelleGrilleF
       )
 
       if (phrasesError) {
-        await grillesService.annulerCreationGrille(nouvelleGrilleId)
+        await grillesService.annulerCreationGrille(nouvelleGrilleId!)
         setMessage(friendlyErrorMessage())
         return
       }
@@ -431,7 +431,7 @@ function ComposerPhrases({ grille, onRetourBibliotheque, onPartieLancee }: Compo
         )
 
         if (insertError) {
-          await grillesService.annulerCreationGrille(nouvelleGrilleId)
+          await grillesService.annulerCreationGrille(nouvelleGrilleId!)
           setMessage(friendlyErrorMessage())
           return
         }

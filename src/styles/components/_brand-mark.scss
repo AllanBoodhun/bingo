@@ -4,4 +4,11 @@
   max-width: 300px;
   height: auto;
   margin: 0 auto;
+
+  &--compact {
+    width: 96px;
+    max-width: none;
+    height: 45px;
+    margin: 0;
+  }
 }

@@ -1,5 +1,11 @@
-export function BrandMark() {
+type BrandMarkProps = {
+  variant?: 'default' | 'compact'
+}
+
+export function BrandMark({ variant = 'default' }: BrandMarkProps) {
+  const className = ['brand-mark', variant === 'compact' ? 'brand-mark--compact' : ''].filter(Boolean).join(' ')
+
   return (
-    <img className="brand-mark" src="/Logo.svg" alt="Super Bingo" />
+    <img className={className} src="/Logo.svg" alt="Super Bingo" />
   )
 }

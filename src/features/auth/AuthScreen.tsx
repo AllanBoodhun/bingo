@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { supabase } from '../../lib/supabase/client'
+import { supabase, nettoyerJoueursInvite } from '../../lib/supabase/client'
 import { Button } from '../../components/Button'
 import './AuthScreen.scss'
 
@@ -30,18 +30,42 @@ export function AuthScreen() {
     try {
       const trimmedEmail = email.trim()
 
+      // Capturé AVANT le signUp/signInWithPassword : un invité qui rejoint une partie
+      // anonymement (signInAnonymously, écran "Rejoindre") puis se connecte ici à un
+      // compte réel change d'`auth_user_id` — Supabase émet une identité entièrement
+      // nouvelle, jamais une migration de l'ancienne. Le jeton de cette ancienne
+      // session reste valide indépendamment du succès de l'appel ci-dessous (capturé
+      // maintenant, utilisé seulement après un succès confirmé) : sert au nettoyage
+      // ci-dessous, pour ne jamais supprimer une partie en cours sur une simple
+      // tentative de connexion ratée (mot de passe erroné, etc.).
+      const {
+        data: { session: sessionAvant },
+      } = await supabase.auth.getSession()
+
       if (mode === 'signup') {
         const { data, error } = await supabase.auth.signUp({ email: trimmedEmail, password })
         if (error) {
           setMessage(friendlyErrorMessage(error.message))
+          return
         } else if (!data.session && (data.user?.identities?.length ?? 0) === 0) {
           setMessage(friendlyErrorMessage('already registered'))
+          return
         }
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email: trimmedEmail, password })
         if (error) {
           setMessage(friendlyErrorMessage(error.message))
+          return
         }
+      }
+
+      // Uniquement si l'identité PRÉCÉDENTE était un invité anonyme (jamais pour un
+      // compte réel qui change simplement d'email/mot de passe) : ses éventuelles
+      // lignes `joueurs` deviennent orphelines (jeton local perdu, plus jamais
+      // ré-atteignables par l'app) tout en continuant à compter dans le plafond de 6
+      // joueurs d'une partie — les supprimer maintenant reclaim ce(s) slot(s).
+      if (sessionAvant?.user.is_anonymous) {
+        await nettoyerJoueursInvite(sessionAvant)
       }
     } catch {
       setMessage(friendlyErrorMessage(''))

@@ -5,6 +5,7 @@ import { BrandMark } from '../../components/BrandMark'
 import { ConfirmDialog } from '../../components/ConfirmDialog'
 import { GrilleCard } from './components/GrilleCard'
 import { PartieEnCoursCard } from './components/PartieEnCoursCard'
+import { PartieRejointeCard } from './components/PartieRejointeCard'
 import type { Grille, PartieActive } from './types'
 import './BibliothequeScreen.scss'
 
@@ -23,12 +24,21 @@ function nomDeLaCopie(nomSource: string): string {
 }
 
 type BibliothequeScreenProps = {
+  // Identité du compte courant (`session.user.id`, App.tsx) : nécessaire pour filtrer
+  // les parties rejointes par ce compte (`joueurs.compte_id`), indépendamment des
+  // grilles qu'il possède lui-même.
+  compteId: string
   onNouvelleGrille: () => void
   onModifierGrille: (grille: { id: string; nom: string; taille: number }) => void
   onRejoindrePartie: (grille: Grille, partie: PartieActive) => void
 }
 
-export function BibliothequeScreen({ onNouvelleGrille, onModifierGrille, onRejoindrePartie }: BibliothequeScreenProps) {
+export function BibliothequeScreen({
+  compteId,
+  onNouvelleGrille,
+  onModifierGrille,
+  onRejoindrePartie,
+}: BibliothequeScreenProps) {
   const [grilles, setGrilles] = useState<Grille[]>([])
   const [chargement, setChargement] = useState(true)
   const [chargementEchoue, setChargementEchoue] = useState(false)
@@ -38,6 +48,7 @@ export function BibliothequeScreen({ onNouvelleGrille, onModifierGrille, onRejoi
   const [dupliquantIds, setDupliquantIds] = useState<Set<string>>(new Set())
   const [lancementIds, setLancementIds] = useState<Set<string>>(new Set())
   const [partiesActivesParGrille, setPartiesActivesParGrille] = useState<Record<string, PartieActive[]>>({})
+  const [partiesRejointes, setPartiesRejointes] = useState<Array<{ grille: Grille; partie: PartieActive }>>([])
   const [confirmation, setConfirmation] = useState<
     { type: 'suppression'; grille: Grille } | { type: 'cloture'; partieId: string; grilleNom: string } | null
   >(null)
@@ -51,6 +62,7 @@ export function BibliothequeScreen({ onNouvelleGrille, onModifierGrille, onRejoi
     setGrilles([])
     setMessage(null)
     setPartiesActivesParGrille({})
+    setPartiesRejointes([])
 
     async function charger() {
       try {
@@ -66,37 +78,44 @@ export function BibliothequeScreen({ onNouvelleGrille, onModifierGrille, onRejoi
           return
         }
 
-        if (grillesData.length === 0) {
-          setGrilles([])
-          return
-        }
-
+        // Pas de `return` anticipé quand `grillesData` est vide (contrairement à
+        // avant cette section) : un compte peut n'avoir créé aucune grille et
+        // pourtant participer à celle d'un autre créateur — le fetch des parties
+        // rejointes ci-dessous doit s'exécuter dans les deux cas.
         const ids = grillesData.map((g) => g.id)
-        const { data: phrasesData, error: phrasesError } = await supabase
-          .from('phrases')
-          .select('grille_id')
-          .in('grille_id', ids)
 
-        if (ignore) return
+        if (ids.length > 0) {
+          const { data: phrasesData, error: phrasesError } = await supabase
+            .from('phrases')
+            .select('grille_id')
+            .in('grille_id', ids)
 
-        if (phrasesError || !phrasesData) {
-          setChargementEchoue(true)
-          return
+          if (ignore) return
+
+          // Pas de `return` anticipé ici (contrairement à avant cette section) : un
+          // échec de ce fetch secondaire (utilisé seulement pour calculer `validee`)
+          // ne doit bloquer ni "Mes grilles" (dégradé en `validee: false`, échec sûr —
+          // masque juste Relancer/Dupliquer) ni, surtout, le fetch des parties
+          // rejointes plus bas dans cette même fonction, qui n'a aucun lien avec ce
+          // calcul et ne doit jamais être court-circuité par son échec.
+          const comptesParGrille = new Map<string, number>()
+          if (!phrasesError && phrasesData) {
+            for (const { grille_id } of phrasesData) {
+              comptesParGrille.set(grille_id, (comptesParGrille.get(grille_id) ?? 0) + 1)
+            }
+          }
+
+          setGrilles(
+            grillesData.map((g) => ({
+              id: g.id,
+              nom: g.nom,
+              taille: g.taille,
+              validee: (comptesParGrille.get(g.id) ?? 0) === g.taille * g.taille,
+            })),
+          )
+        } else {
+          setGrilles([])
         }
-
-        const comptesParGrille = new Map<string, number>()
-        for (const { grille_id } of phrasesData) {
-          comptesParGrille.set(grille_id, (comptesParGrille.get(grille_id) ?? 0) + 1)
-        }
-
-        setGrilles(
-          grillesData.map((g) => ({
-            id: g.id,
-            nom: g.nom,
-            taille: g.taille,
-            validee: (comptesParGrille.get(g.id) ?? 0) === g.taille * g.taille,
-          })),
-        )
 
         // Parties actives par grille : indicateur persistant (survit au rechargement,
         // contrairement à `liensPartie` qui n'existe que le temps de la session après un
@@ -104,66 +123,157 @@ export function BibliothequeScreen({ onNouvelleGrille, onModifierGrille, onRejoi
         // déclaré ou non. Repose sur la policy select déjà existante ("Créateur lit ses
         // parties", Story 2.1) : aucune nouvelle policy/colonne nécessaire. Dégradation
         // silencieuse en cas d'échec, même principe que le rappel de clôture ci-dessous.
-        const { data: partiesActivesData, error: partiesActivesError } = await supabase
-          .from('parties')
-          .select('id, grille_id, code_partie')
-          .in('grille_id', ids)
-          .eq('statut', 'en_cours')
+        // Ignoré si `ids` est vide (aucune grille possédée) : `.in()` avec un tableau
+        // vide n'a rien à filtrer et éviterait une requête PostgREST inutile.
+        let partiesActivesData: Array<{ id: string; grille_id: string; code_partie: string }> | null = []
+        let partiesActivesError: unknown = null
+        if (ids.length > 0) {
+          const resultat = await supabase
+            .from('parties')
+            .select('id, grille_id, code_partie')
+            .in('grille_id', ids)
+            .eq('statut', 'en_cours')
+          partiesActivesData = resultat.data
+          partiesActivesError = resultat.error
+        }
 
         if (ignore) return
 
-        if (!partiesActivesError && partiesActivesData) {
-          const partieIds = partiesActivesData.map((p) => p.id)
+        // Parties auxquelles ce compte participe sans en être le créateur (nouvelle
+        // section "Parties auxquelles je participe") : `joueurs.compte_id` (Story 2.2)
+        // n'est renseigné à `auth.uid()` que pour un compte réel — jamais pour un
+        // invité anonyme, qui garde `compte_id null` — c'est directement le bon filtre
+        // d'identité. Aucune nouvelle policy select sur `joueurs` nécessaire : la
+        // policy existante "Joueur lit les joueurs de sa partie" (est_dans_la_partie)
+        // couvre déjà cette ligne, puisque `auth_user_id` vaut ce même `auth.uid()`
+        // pour un compte réel (rejoindre_partie). Dégradation silencieuse en cas
+        // d'échec, même principe que le fetch ci-dessus.
+        const { data: joueursComptesData, error: joueursComptesError } = await supabase
+          .from('joueurs')
+          .select('partie_id')
+          .eq('compte_id', compteId)
 
-          // Nombre de joueurs + vainqueur(s) par partie active : requêtes secondaires,
-          // dégradation silencieuse en cas d'échec (la carte reste utilisable sans ces
-          // deux informations). Nécessite la policy "Créateur lit les joueurs de ses
-          // parties" (migration 20260722120000) en plus de la policy créateur déjà
-          // existante sur parties_vainqueurs (Story 2.5).
-          const nombreJoueursParPartie = new Map<string, number>()
-          const vainqueursParPartie = new Map<string, string[]>()
+        if (ignore) return
 
-          if (partieIds.length > 0) {
-            const { data: joueursData, error: joueursError } = await supabase
-              .from('joueurs')
-              .select('partie_id')
-              .in('partie_id', partieIds)
-
-            if (!ignore && !joueursError && joueursData) {
-              for (const { partie_id } of joueursData) {
-                nombreJoueursParPartie.set(partie_id, (nombreJoueursParPartie.get(partie_id) ?? 0) + 1)
-              }
-            }
-
-            const { data: vainqueursData, error: vainqueursError } = await supabase
-              .from('parties_vainqueurs')
-              .select('partie_id, joueurs(pseudo)')
-              .in('partie_id', partieIds)
-
-            if (!ignore && !vainqueursError && vainqueursData) {
-              for (const row of vainqueursData as unknown as Array<{ partie_id: string; joueurs: { pseudo: string } }>) {
-                const liste = vainqueursParPartie.get(row.partie_id) ?? []
-                liste.push(row.joueurs.pseudo)
-                vainqueursParPartie.set(row.partie_id, liste)
-              }
-            }
-          }
+        let partiesRejointesBrutes: Array<{ id: string; grille_id: string; code_partie: string }> = []
+        if (!joueursComptesError && joueursComptesData && joueursComptesData.length > 0) {
+          const partieIdsRejointes = [...new Set(joueursComptesData.map((j) => j.partie_id))]
+          const { data: partiesRejointesData, error: partiesRejointesError } = await supabase
+            .from('parties')
+            .select('id, grille_id, code_partie')
+            .in('id', partieIdsRejointes)
+            .eq('statut', 'en_cours')
 
           if (ignore) return
 
-          const parGrille: Record<string, PartieActive[]> = {}
-          for (const p of partiesActivesData) {
-            const liste = parGrille[p.grille_id] ?? []
-            liste.push({
+          if (!partiesRejointesError && partiesRejointesData) {
+            // Exclut les parties de ses propres grilles : un créateur qui a rejoint sa
+            // propre partie via son propre lien (cas rare mais possible, session déjà
+            // active en ouvrant le lien) ne doit jamais voir la partie dupliquée entre
+            // les deux sections — "Partie en cours" reste réservée aux grilles possédées
+            // (Never de la spec : ne jamais fusionner les deux sections).
+            partiesRejointesBrutes = partiesRejointesData.filter((p) => !ids.includes(p.grille_id))
+          }
+        }
+
+        // Nom/taille des grilles rejointes : nécessite la policy "Joueur lit les
+        // grilles des parties auxquelles il participe" (nouvelle migration) — seule
+        // policy select qui autorise un non-créateur à lire une grille qu'il ne
+        // possède pas. Dégradation silencieuse en cas d'échec (même principe).
+        const idsGrillesRejointes = [...new Set(partiesRejointesBrutes.map((p) => p.grille_id))]
+        let grillesRejointesData: Array<{ id: string; nom: string; taille: number }> = []
+        if (idsGrillesRejointes.length > 0) {
+          const { data: grillesRejointesResult, error: grillesRejointesError } = await supabase
+            .from('grilles')
+            .select('id, nom, taille')
+            .in('id', idsGrillesRejointes)
+
+          if (ignore) return
+
+          if (!grillesRejointesError && grillesRejointesResult) {
+            grillesRejointesData = grillesRejointesResult
+          }
+        }
+
+        const partiesActivesSafe = !partiesActivesError && partiesActivesData ? partiesActivesData : []
+        // Liste étendue (pas dupliquée) : une seule paire de requêtes ci-dessous couvre
+        // à la fois les parties créateur et les parties rejointes, plutôt que de
+        // relancer joueurs/parties_vainqueurs une seconde fois pour la nouvelle section.
+        const partieIds = [...partiesActivesSafe.map((p) => p.id), ...partiesRejointesBrutes.map((p) => p.id)]
+
+        // Nombre de joueurs + vainqueur(s) par partie active : requêtes secondaires,
+        // dégradation silencieuse en cas d'échec (la carte reste utilisable sans ces
+        // deux informations). Nécessite la policy "Créateur lit les joueurs de ses
+        // parties" (migration 20260722120000) en plus de la policy créateur déjà
+        // existante sur parties_vainqueurs (Story 2.5), et pour la partie rejointe la
+        // policy "Joueur lit les joueurs de sa partie"/"Joueur lit les vainqueurs de sa
+        // partie" déjà en place (Story 2.2/2.4).
+        const nombreJoueursParPartie = new Map<string, number>()
+        const vainqueursParPartie = new Map<string, string[]>()
+
+        if (partieIds.length > 0) {
+          const { data: joueursData, error: joueursError } = await supabase
+            .from('joueurs')
+            .select('partie_id')
+            .in('partie_id', partieIds)
+
+          if (!ignore && !joueursError && joueursData) {
+            for (const { partie_id } of joueursData) {
+              nombreJoueursParPartie.set(partie_id, (nombreJoueursParPartie.get(partie_id) ?? 0) + 1)
+            }
+          }
+
+          const { data: vainqueursData, error: vainqueursError } = await supabase
+            .from('parties_vainqueurs')
+            .select('partie_id, joueurs(pseudo)')
+            .in('partie_id', partieIds)
+
+          if (!ignore && !vainqueursError && vainqueursData) {
+            for (const row of vainqueursData as unknown as Array<{ partie_id: string; joueurs: { pseudo: string } }>) {
+              const liste = vainqueursParPartie.get(row.partie_id) ?? []
+              liste.push(row.joueurs.pseudo)
+              vainqueursParPartie.set(row.partie_id, liste)
+            }
+          }
+        }
+
+        if (ignore) return
+
+        const parGrille: Record<string, PartieActive[]> = {}
+        for (const p of partiesActivesSafe) {
+          const liste = parGrille[p.grille_id] ?? []
+          liste.push({
+            id: p.id,
+            codePartie: p.code_partie,
+            nombreJoueurs: nombreJoueursParPartie.get(p.id) ?? 0,
+            vainqueurs: vainqueursParPartie.get(p.id) ?? [],
+          })
+          parGrille[p.grille_id] = liste
+        }
+        setPartiesActivesParGrille(parGrille)
+
+        const grillesRejointesParId = new Map(grillesRejointesData.map((g) => [g.id, g]))
+        const rejointes: Array<{ grille: Grille; partie: PartieActive }> = []
+        for (const p of partiesRejointesBrutes) {
+          const grilleRejointe = grillesRejointesParId.get(p.grille_id)
+          // Grille introuvable (échec réseau ci-dessus, ou supprimée entre-temps) :
+          // exclusion silencieuse de cette carte plutôt qu'un affichage partiel.
+          if (!grilleRejointe) continue
+          rejointes.push({
+            // `validee` toujours vraie ici : une partie ne peut être lancée que depuis
+            // une grille entièrement remplie (contrainte déjà appliquée à la création),
+            // aucune requête `phrases` supplémentaire nécessaire pour ce champ — jamais
+            // affiché sur PartieRejointeCard, seulement utile à `handleDupliquer`.
+            grille: { id: grilleRejointe.id, nom: grilleRejointe.nom, taille: grilleRejointe.taille, validee: true },
+            partie: {
               id: p.id,
               codePartie: p.code_partie,
               nombreJoueurs: nombreJoueursParPartie.get(p.id) ?? 0,
               vainqueurs: vainqueursParPartie.get(p.id) ?? [],
-            })
-            parGrille[p.grille_id] = liste
-          }
-          setPartiesActivesParGrille(parGrille)
+            },
+          })
         }
+        setPartiesRejointes(rejointes)
       } catch {
         if (!ignore) {
           setChargementEchoue(true)
@@ -180,7 +290,7 @@ export function BibliothequeScreen({ onNouvelleGrille, onModifierGrille, onRejoi
     return () => {
       ignore = true
     }
-  }, [retry])
+  }, [retry, compteId])
 
   async function handleSignOut() {
     setSigningOut(true)
@@ -408,31 +518,59 @@ export function BibliothequeScreen({ onNouvelleGrille, onModifierGrille, onRejoi
         Nouvelle grille
       </Button>
 
-      {grilles.length === 0 ? (
+      {partiesEnCours.length > 0 && (
+        <div className="grille-list__section">
+          <p className="grille-list__section-title">Partie en cours - {partiesEnCours.length}</p>
+          <ul className="grille-list">
+            {partiesEnCours.map(({ grille, partie }) => (
+              <PartieEnCoursCard
+                key={partie.id}
+                grille={grille}
+                partie={partie}
+                onRejoindrePartie={onRejoindrePartie}
+                onDemanderCloture={handleDemanderCloture}
+              />
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Section distincte de "Partie en cours" (Never de la spec : jamais fusionnée) —
+          parties d'un autre créateur auxquelles ce compte participe, jamais de CTA
+          Clôturer (PartieRejointeCard n'a par construction pas cette prop). Rendue
+          indépendamment de `grilles.length` : un compte peut n'avoir créé aucune grille
+          et pourtant participer à celle d'un autre. */}
+      {partiesRejointes.length > 0 && (
+        <div className="grille-list__section">
+          <p className="grille-list__section-title">Parties auxquelles je participe - {partiesRejointes.length}</p>
+          <ul className="grille-list">
+            {partiesRejointes.map(({ grille, partie }) => (
+              <PartieRejointeCard
+                key={partie.id}
+                grille={grille}
+                partie={partie}
+                onRejoindrePartie={onRejoindrePartie}
+                onDupliquer={handleDupliquer}
+                dupliquantEnCours={dupliquantIds.has(grille.id)}
+              />
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Le placeholder "crée ta première grille" ne doit s'afficher que si ce compte
+          n'a vraiment aucune activité — ni grille possédée, ni partie rejointe chez un
+          autre. Sinon (ex. un compte qui n'a créé aucune grille mais participe à celle
+          d'un autre) il contredirait la section "Parties auxquelles je participe"
+          juste au-dessus. */}
+      {grilles.length === 0 && partiesRejointes.length === 0 && (
         <p className="bibliotheque-screen__subtitle">Crée ta première grille pour commencer !</p>
-      ) : (
-        <>
-          {partiesEnCours.length > 0 && (
-            <div className="grille-list__section">
-              <p className="grille-list__section-title">Partie en cours - {partiesEnCours.length}</p>
-              <ul className="grille-list">
-                {partiesEnCours.map(({ grille, partie }) => (
-                  <PartieEnCoursCard
-                    key={partie.id}
-                    grille={grille}
-                    partie={partie}
-                    onRejoindrePartie={onRejoindrePartie}
-                    onDemanderCloture={handleDemanderCloture}
-                  />
-                ))}
-              </ul>
-            </div>
-          )}
-          <div className="grille-list__section">
-            <p className="grille-list__section-title">Mes grilles - {grilles.length}</p>
-            <ul className="grille-list">{grilles.map(renderGrilleCard)}</ul>
-          </div>
-        </>
+      )}
+      {grilles.length > 0 && (
+        <div className="grille-list__section">
+          <p className="grille-list__section-title">Mes grilles - {grilles.length}</p>
+          <ul className="grille-list">{grilles.map(renderGrilleCard)}</ul>
+        </div>
       )}
 
       {message && <p className="bibliotheque-screen__message">{message}</p>}

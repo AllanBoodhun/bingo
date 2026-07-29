@@ -40,6 +40,10 @@ bingo remplace le bingo papier à phrases personnalisées par un jeu multijoueur
   - **intent:** Un utilisateur crée un compte pour retrouver, relancer ou dupliquer ses grilles précédentes sans en retaper le contenu ; un joueur invité sans compte ne conserve aucun historique après la partie.
   - **success:** La bibliothèque liste les grilles d'un compte par nom avec les actions Relancer/Dupliquer ; une bannière rappelle une partie non clôturée dont un vainqueur a déjà été déclaré.
 
+- **CAP-6 — Bibliothèque d'un joueur-compte invité**
+  - **intent:** Un utilisateur avec compte qui rejoint la partie d'un autre créateur retrouve un chemin de retour vers sa propre Bibliothèque dès qu'il a rejoint, et y voit cette partie listée comme "en cours" dans une section distincte de ses propres grilles/parties créées ; il peut dupliquer la grille de cette partie vers sa propre bibliothèque de grilles s'il le souhaite.
+  - **success:** Le retour vers la Bibliothèque est toujours proposé à un compte qui rejoint via lien (plus de dead-end) ; la partie rejointe apparaît dans une section dédiée, distincte de "Mes grilles"/parties créées, sans jamais le CTA Clôturer ; l'action Dupliquer copie la grille (nom, taille, phrases) comme une grille indépendante dans son propre compte, identique au mécanisme de duplication déjà existant pour une grille possédée ; ce comportement ne s'applique jamais à un joueur sans compte.
+
 ## Constraints
 
 - Taille de grille N×N, N entre 3 et 5.
@@ -48,6 +52,7 @@ bingo remplace le bingo papier à phrases personnalisées par un jeu multijoueur
 - La taille de grille est verrouillée après le lancement de la partie ; le texte des phrases reste modifiable à tout moment, y compris en partie.
 - Le cochage reste strictement déclaratif : aucune vérification ou arbitrage central des cases cochées.
 - Un joueur invité (sans compte) ne conserve aucun historique après la fin de la partie.
+- Un joueur non-créateur (même avec compte) ne peut jamais clôturer ni modifier la partie ou la grille d'un autre — seule l'action Dupliquer (copie indépendante, sans lien retenu vers l'original) lui est ouverte.
 
 ## Non-goals
 

@@ -27,7 +27,7 @@ function App() {
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
   const [ecran, setEcran] = useState<Ecran>('bibliotheque')
-  const [codePartieRejoint] = useState<string | null>(() => lireCodePartieDepuisURL())
+  const [codePartieRejoint, setCodePartieRejoint] = useState<string | null>(() => lireCodePartieDepuisURL())
   const [joueurRejoint, setJoueurRejoint] = useState<Joueur | null>(null)
   const [grilleAEditer, setGrilleAEditer] = useState<GrilleAEditer | null>(null)
   const [partieActiveContexte, setPartieActiveContexte] = useState<{ grille: Grille; partie: PartieActive } | null>(
@@ -80,7 +80,29 @@ function App() {
 
   if (codePartieRejoint !== null) {
     return joueurRejoint ? (
-      <GrilleEnDirecteScreen joueur={joueurRejoint} codePartie={codePartieRejoint} />
+      <GrilleEnDirecteScreen
+        joueur={joueurRejoint}
+        codePartie={codePartieRejoint}
+        // Uniquement pour un compte réel (jamais un invité anonyme, Story 2.7) : `!==
+        // false` inversé en `=== false` ici, volontairement — on cherche cette fois à
+        // détecter *positivement* un compte réel plutôt qu'à échouer fermé vers
+        // AuthScreen, mais le même principe d'échec fermé s'applique : indéterminé
+        // (session pas encore résolue, is_anonymous incertain) retombe sur `undefined`,
+        // donc sur l'absence de bouton retour plutôt que sur son affichage à tort.
+        onRetourBibliotheque={
+          session?.user.is_anonymous === false
+            ? () => {
+                setJoueurRejoint(null)
+                setCodePartieRejoint(null)
+                // Sans ce nettoyage, `?partie=code` resterait dans l'URL : un simple
+                // rechargement de page (ou réouverture d'un onglet gardé ouvert) ferait
+                // retomber directement dans l'écran de jeu au lieu de la Bibliothèque —
+                // "retour" doit être un retour réel, pas seulement cosmétique en mémoire.
+                window.history.replaceState(null, '', window.location.pathname)
+              }
+            : undefined
+        }
+      />
     ) : (
       <PartieActiveScreen codePartie={codePartieRejoint} onAccederGrille={setJoueurRejoint} />
     )
@@ -151,6 +173,7 @@ function App() {
 
   return (
     <BibliothequeScreen
+      compteId={session.user.id}
       onNouvelleGrille={() => {
         setGrilleAEditer(null)
         setEcran('creation-grille')

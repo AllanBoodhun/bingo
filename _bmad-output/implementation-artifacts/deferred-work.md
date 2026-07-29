@@ -53,3 +53,8 @@
 ## Deferred from: code review of story-2-7-pas-d-historique-pour-les-invites (2026-07-10)
 
 - Aucun message contextuel n'explique à un invité pourquoi il atterrit sur l'écran de connexion/création de compte après la fin d'une partie — amélioration UX potentielle, non exigée par un AC ou un `UX-DR` de ce projet.
+
+## Deferred from: code review of spec-bibliotheque-partie-rejointe (2026-07-29)
+
+- `handleDupliquer` (`BibliothequeScreen.tsx`) crée silencieusement une grille dupliquée à 0 phrase si le créateur original supprime/vide les phrases de sa grille entre l'ouverture de la Bibliothèque et le clic sur "Dupliquer" — pré-existant (fonction non modifiée par cette story), surfacé incidemment par la revue de la nouvelle carte "Parties auxquelles je participe" qui l'expose désormais aussi à un non-créateur.
+- Fenêtre théorique très brève où `onRetourBibliotheque` (App.tsx) peut ne pas encore être proposé à un compte réel qui vient d'ouvrir un lien `?partie=code`, si `session` n'a pas fini de se résoudre au moment du premier rendu de `GrilleEnDirecteScreen` — impact pratique jugé négligeable (résolution de session en localStorage, plus rapide que le chargement des `cases`/`joueurs` de l'écran de jeu), à réexaminer seulement si un utilisateur rapporte concrètement l'avoir vécu.

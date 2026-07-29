@@ -183,19 +183,27 @@ export function GrilleEnDirecteScreen({ joueur, codePartie, onRetourBibliotheque
         setStatutPartie(partieError || !partieData ? 'en_cours' : partieData.statut)
         setChargementEchoue(false)
 
-        // "Suis-je le créateur ?" : sous-produit direct de la policy select existante sur
-        // grilles ("Créateur lit ses grilles", Story 1.2) — RLS renvoie une ligne si le
-        // compte courant possède cette grille, null sinon. Aucune nouvelle policy/fonction
-        // nécessaire. Séquentiel (dépend de grille_id ci-dessus), n'échoue jamais l'écran :
-        // un échec réseau se traduit juste par l'absence du CTA de clôture (défaut sûr).
+        // "Suis-je le créateur ?" : ne peut plus se déduire de la simple lisibilité de
+        // `grilles` (bug corrigé le 2026-07-29) — depuis la policy "Joueur lit les
+        // grilles des parties auxquelles il participe" (CAP-6), n'IMPORTE QUEL joueur
+        // de la partie peut désormais lire cette ligne, pas seulement son créateur.
+        // Comparaison explicite de `grilles.compte_id` avec le `compte_id` de MA PROPRE
+        // ligne `joueurs` (jamais avec `auth.uid()` directement : un invité anonyme n'a
+        // pas de `compte_id`, la comparaison doit échouer pour lui aussi). Aucune
+        // nouvelle policy nécessaire : "Joueur lit les joueurs de sa partie" (Story 2.2)
+        // couvre déjà la lecture de ma propre ligne. Échoue vers `false` par défaut
+        // (CTA de clôture absent) sur tout échec réseau — jamais l'inverse.
         if (!ignore && !partieError && partieData) {
-          const { data: grilleData } = await supabase
-            .from('grilles')
-            .select('id')
-            .eq('id', partieData.grille_id)
-            .maybeSingle()
+          const [{ data: grilleData }, { data: monJoueurData }] = await Promise.all([
+            supabase.from('grilles').select('compte_id').eq('id', partieData.grille_id).maybeSingle(),
+            supabase.from('joueurs').select('compte_id').eq('id', joueur.id).maybeSingle(),
+          ])
           if (!ignore) {
-            setEstCreateur(Boolean(grilleData))
+            setEstCreateur(
+              Boolean(grilleData?.compte_id) &&
+                Boolean(monJoueurData?.compte_id) &&
+                grilleData?.compte_id === monJoueurData?.compte_id,
+            )
           }
         }
 

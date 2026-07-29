@@ -1,5 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import { supabase } from '../../lib/supabase/client'
+import * as grillesService from '../../services/grilles.service'
+import * as phrasesService from '../../services/phrases.service'
+import * as partiesService from '../../services/parties.service'
 import { Button } from '../../components/Button'
 import { BrandMark } from '../../components/BrandMark'
 import { ConfirmDialog } from '../../components/ConfirmDialog'
@@ -88,11 +90,7 @@ function NouvelleGrilleForm({ onCreated, onRetourBibliotheque }: NouvelleGrilleF
     let nouvelleGrilleId: string | null = null
 
     try {
-      const { data: nouvelleGrille, error: grilleError } = await supabase
-        .from('grilles')
-        .insert({ nom: nom.trim(), taille })
-        .select()
-        .single()
+      const { data: nouvelleGrille, error: grilleError } = await grillesService.creerGrille(nom.trim(), taille)
 
       if (grilleError || !nouvelleGrille) {
         setMessage(friendlyErrorMessage())
@@ -101,12 +99,12 @@ function NouvelleGrilleForm({ onCreated, onRetourBibliotheque }: NouvelleGrilleF
 
       nouvelleGrilleId = nouvelleGrille.id
 
-      const { error: phrasesError } = await supabase
-        .from('phrases')
-        .insert(phrases.map((texte) => ({ grille_id: nouvelleGrilleId, texte })))
+      const { error: phrasesError } = await phrasesService.creerPhrases(
+        phrases.map((texte) => ({ grille_id: nouvelleGrilleId!, texte })),
+      )
 
       if (phrasesError) {
-        await supabase.from('grilles').delete().eq('id', nouvelleGrilleId)
+        await grillesService.annulerCreationGrille(nouvelleGrilleId)
         setMessage(friendlyErrorMessage())
         return
       }
@@ -114,7 +112,7 @@ function NouvelleGrilleForm({ onCreated, onRetourBibliotheque }: NouvelleGrilleF
       onCreated({ id: nouvelleGrille.id, nom: nouvelleGrille.nom, taille: nouvelleGrille.taille })
     } catch {
       if (nouvelleGrilleId) {
-        await supabase.from('grilles').delete().eq('id', nouvelleGrilleId)
+        await grillesService.annulerCreationGrille(nouvelleGrilleId)
       }
       setMessage(friendlyErrorMessage())
     } finally {
@@ -267,8 +265,8 @@ function ComposerPhrases({ grille, onRetourBibliotheque, onPartieLancee }: Compo
     async function charger() {
       try {
         const [phrasesResult, partiesResult] = await Promise.all([
-          supabase.from('phrases').select('id, texte').eq('grille_id', grille.id).order('created_at'),
-          supabase.from('parties').select('id').eq('grille_id', grille.id).limit(1),
+          phrasesService.listerPhrasesDeGrille(grille.id),
+          partiesService.existePartiePourGrille(grille.id),
         ])
 
         if (ignore) return
@@ -313,11 +311,7 @@ function ComposerPhrases({ grille, onRetourBibliotheque, onPartieLancee }: Compo
     setMessage(null)
 
     try {
-      const { data, error } = await supabase
-        .from('phrases')
-        .insert({ grille_id: grille.id, texte })
-        .select()
-        .single()
+      const { data, error } = await phrasesService.creerPhrase(grille.id, texte)
 
       if (error || !data) {
         setMessage(friendlyErrorMessage())
@@ -338,11 +332,7 @@ function ComposerPhrases({ grille, onRetourBibliotheque, onPartieLancee }: Compo
     setLancementMessage(null)
 
     try {
-      const { data, error } = await supabase
-        .from('parties')
-        .insert({ grille_id: grille.id })
-        .select()
-        .single()
+      const { data, error } = await partiesService.creerPartie(grille.id)
 
       if (error || !data) {
         setLancementMessage(friendlyErrorMessage())
@@ -376,7 +366,7 @@ function ComposerPhrases({ grille, onRetourBibliotheque, onPartieLancee }: Compo
     setMessage(null)
 
     try {
-      const { error } = await supabase.from('phrases').update({ texte }).eq('id', id)
+      const { error } = await phrasesService.modifierPhrase(id, texte)
       if (error) {
         setMessage(friendlyErrorMessage())
         return
@@ -401,7 +391,7 @@ function ComposerPhrases({ grille, onRetourBibliotheque, onPartieLancee }: Compo
     setMessage(null)
 
     try {
-      const { error } = await supabase.from('grilles').update({ nom: texte }).eq('id', grille.id)
+      const { error } = await grillesService.renommerGrille(grille.id, texte)
       if (error) {
         setMessage(friendlyErrorMessage())
         setNomEnEdition(nom)
@@ -423,11 +413,10 @@ function ComposerPhrases({ grille, onRetourBibliotheque, onPartieLancee }: Compo
     let nouvelleGrilleId: string | null = null
 
     try {
-      const { data: nouvelleGrille, error: grilleError } = await supabase
-        .from('grilles')
-        .insert({ nom: nomDeLaCopie(nom), taille })
-        .select()
-        .single()
+      const { data: nouvelleGrille, error: grilleError } = await grillesService.creerGrille(
+        nomDeLaCopie(nom),
+        taille,
+      )
 
       if (grilleError || !nouvelleGrille) {
         setMessage(friendlyErrorMessage())
@@ -437,12 +426,12 @@ function ComposerPhrases({ grille, onRetourBibliotheque, onPartieLancee }: Compo
       nouvelleGrilleId = nouvelleGrille.id
 
       if (phrases.length > 0) {
-        const { error: insertError } = await supabase
-          .from('phrases')
-          .insert(phrases.map((p) => ({ grille_id: nouvelleGrilleId, texte: p.texte })))
+        const { error: insertError } = await phrasesService.creerPhrases(
+          phrases.map((p) => ({ grille_id: nouvelleGrilleId!, texte: p.texte })),
+        )
 
         if (insertError) {
-          await supabase.from('grilles').delete().eq('id', nouvelleGrilleId)
+          await grillesService.annulerCreationGrille(nouvelleGrilleId)
           setMessage(friendlyErrorMessage())
           return
         }
@@ -451,7 +440,7 @@ function ComposerPhrases({ grille, onRetourBibliotheque, onPartieLancee }: Compo
       onRetourBibliotheque()
     } catch {
       if (nouvelleGrilleId) {
-        await supabase.from('grilles').delete().eq('id', nouvelleGrilleId)
+        await grillesService.annulerCreationGrille(nouvelleGrilleId)
       }
       setMessage(friendlyErrorMessage())
     } finally {
@@ -467,7 +456,7 @@ function ComposerPhrases({ grille, onRetourBibliotheque, onPartieLancee }: Compo
       // `.select()` force la représentation de la ligne supprimée : même piège que
       // handleSupprimer (Bibliothèque) — un delete filtré en silence par RLS renverrait
       // sinon un succès sans erreur, sans que la grille n'ait réellement été supprimée.
-      const { data, error } = await supabase.from('grilles').delete().eq('id', grille.id).select()
+      const { data, error } = await grillesService.supprimerGrille(grille.id)
 
       if (error || !data || data.length === 0) {
         setMessage(friendlyErrorMessage())
@@ -490,7 +479,7 @@ function ComposerPhrases({ grille, onRetourBibliotheque, onPartieLancee }: Compo
     setMessage(null)
 
     try {
-      const { error } = await supabase.from('grilles').update({ taille: nouvelleTaille }).eq('id', grille.id)
+      const { error } = await grillesService.changerTailleGrille(grille.id, nouvelleTaille)
       if (error) {
         setMessage(friendlyErrorMessage())
         return
@@ -511,7 +500,7 @@ function ComposerPhrases({ grille, onRetourBibliotheque, onPartieLancee }: Compo
       // `.select()` force la représentation de la ligne supprimée : même piège que
       // handleSupprimer (Bibliothèque) — un delete filtré en silence par RLS ou refusé
       // par le trigger de verrouillage renverrait sinon un succès sans erreur.
-      const { data, error } = await supabase.from('phrases').delete().eq('id', id).select()
+      const { data, error } = await phrasesService.supprimerPhrase(id)
 
       if (error || !data || data.length === 0) {
         setMessage(friendlyErrorMessage())

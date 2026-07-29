@@ -1,5 +1,9 @@
 import { useEffect, useState } from 'react'
-import { supabase } from '../../lib/supabase/client'
+import { deconnecter } from '../../services/auth.service'
+import * as grillesService from '../../services/grilles.service'
+import * as phrasesService from '../../services/phrases.service'
+import * as partiesService from '../../services/parties.service'
+import * as joueursService from '../../services/joueurs.service'
 import { Button } from '../../components/Button'
 import { BrandMark } from '../../components/BrandMark'
 import { ConfirmDialog } from '../../components/ConfirmDialog'
@@ -66,10 +70,7 @@ export function BibliothequeScreen({
 
     async function charger() {
       try {
-        const { data: grillesData, error: grillesError } = await supabase
-          .from('grilles')
-          .select('id, nom, taille')
-          .order('created_at', { ascending: false })
+        const { data: grillesData, error: grillesError } = await grillesService.listerGrilles()
 
         if (ignore) return
 
@@ -85,10 +86,7 @@ export function BibliothequeScreen({
         const ids = grillesData.map((g) => g.id)
 
         if (ids.length > 0) {
-          const { data: phrasesData, error: phrasesError } = await supabase
-            .from('phrases')
-            .select('grille_id')
-            .in('grille_id', ids)
+          const { data: phrasesData, error: phrasesError } = await phrasesService.listerGrilleIdsDesPhrases(ids)
 
           if (ignore) return
 
@@ -128,11 +126,7 @@ export function BibliothequeScreen({
         let partiesActivesData: Array<{ id: string; grille_id: string; code_partie: string }> | null = []
         let partiesActivesError: unknown = null
         if (ids.length > 0) {
-          const resultat = await supabase
-            .from('parties')
-            .select('id, grille_id, code_partie')
-            .in('grille_id', ids)
-            .eq('statut', 'en_cours')
+          const resultat = await partiesService.listerPartiesEnCoursParGrilles(ids)
           partiesActivesData = resultat.data
           partiesActivesError = resultat.error
         }
@@ -148,21 +142,16 @@ export function BibliothequeScreen({
         // couvre déjà cette ligne, puisque `auth_user_id` vaut ce même `auth.uid()`
         // pour un compte réel (rejoindre_partie). Dégradation silencieuse en cas
         // d'échec, même principe que le fetch ci-dessus.
-        const { data: joueursComptesData, error: joueursComptesError } = await supabase
-          .from('joueurs')
-          .select('partie_id')
-          .eq('compte_id', compteId)
+        const { data: joueursComptesData, error: joueursComptesError } =
+          await joueursService.listerPartiesRejointesParCompte(compteId)
 
         if (ignore) return
 
         let partiesRejointesBrutes: Array<{ id: string; grille_id: string; code_partie: string }> = []
         if (!joueursComptesError && joueursComptesData && joueursComptesData.length > 0) {
           const partieIdsRejointes = [...new Set(joueursComptesData.map((j) => j.partie_id))]
-          const { data: partiesRejointesData, error: partiesRejointesError } = await supabase
-            .from('parties')
-            .select('id, grille_id, code_partie')
-            .in('id', partieIdsRejointes)
-            .eq('statut', 'en_cours')
+          const { data: partiesRejointesData, error: partiesRejointesError } =
+            await partiesService.listerPartiesEnCoursParIds(partieIdsRejointes)
 
           if (ignore) return
 
@@ -183,10 +172,8 @@ export function BibliothequeScreen({
         const idsGrillesRejointes = [...new Set(partiesRejointesBrutes.map((p) => p.grille_id))]
         let grillesRejointesData: Array<{ id: string; nom: string; taille: number }> = []
         if (idsGrillesRejointes.length > 0) {
-          const { data: grillesRejointesResult, error: grillesRejointesError } = await supabase
-            .from('grilles')
-            .select('id, nom, taille')
-            .in('id', idsGrillesRejointes)
+          const { data: grillesRejointesResult, error: grillesRejointesError } =
+            await grillesService.listerGrillesParIds(idsGrillesRejointes)
 
           if (ignore) return
 
@@ -212,10 +199,7 @@ export function BibliothequeScreen({
         const vainqueursParPartie = new Map<string, string[]>()
 
         if (partieIds.length > 0) {
-          const { data: joueursData, error: joueursError } = await supabase
-            .from('joueurs')
-            .select('partie_id')
-            .in('partie_id', partieIds)
+          const { data: joueursData, error: joueursError } = await joueursService.listerJoueursParParties(partieIds)
 
           if (!ignore && !joueursError && joueursData) {
             for (const { partie_id } of joueursData) {
@@ -223,10 +207,8 @@ export function BibliothequeScreen({
             }
           }
 
-          const { data: vainqueursData, error: vainqueursError } = await supabase
-            .from('parties_vainqueurs')
-            .select('partie_id, joueurs(pseudo)')
-            .in('partie_id', partieIds)
+          const { data: vainqueursData, error: vainqueursError } =
+            await partiesService.listerVainqueursParParties(partieIds)
 
           if (!ignore && !vainqueursError && vainqueursData) {
             for (const row of vainqueursData as unknown as Array<{ partie_id: string; joueurs: { pseudo: string } }>) {
@@ -295,7 +277,7 @@ export function BibliothequeScreen({
   async function handleSignOut() {
     setSigningOut(true)
     try {
-      await supabase.auth.signOut()
+      await deconnecter()
     } catch {
       setMessage(friendlyErrorMessage())
     } finally {
@@ -310,11 +292,10 @@ export function BibliothequeScreen({
     let nouvelleGrilleId: string | null = null
 
     try {
-      const { data: nouvelleGrille, error: grilleError } = await supabase
-        .from('grilles')
-        .insert({ nom: nomDeLaCopie(grille.nom), taille: grille.taille })
-        .select()
-        .single()
+      const { data: nouvelleGrille, error: grilleError } = await grillesService.creerGrille(
+        nomDeLaCopie(grille.nom),
+        grille.taille,
+      )
 
       if (grilleError || !nouvelleGrille) {
         setMessage(friendlyErrorMessage())
@@ -323,24 +304,21 @@ export function BibliothequeScreen({
 
       nouvelleGrilleId = nouvelleGrille.id
 
-      const { data: phrasesSource, error: phrasesError } = await supabase
-        .from('phrases')
-        .select('texte')
-        .eq('grille_id', grille.id)
+      const { data: phrasesSource, error: phrasesError } = await phrasesService.listerTextesPhrases(grille.id)
 
       if (phrasesError || !phrasesSource) {
-        await supabase.from('grilles').delete().eq('id', nouvelleGrilleId)
+        await grillesService.annulerCreationGrille(nouvelleGrilleId)
         setMessage(friendlyErrorMessage())
         return
       }
 
       if (phrasesSource.length > 0) {
-        const { error: insertError } = await supabase
-          .from('phrases')
-          .insert(phrasesSource.map((p) => ({ grille_id: nouvelleGrilleId, texte: p.texte })))
+        const { error: insertError } = await phrasesService.creerPhrases(
+          phrasesSource.map((p) => ({ grille_id: nouvelleGrilleId!, texte: p.texte })),
+        )
 
         if (insertError) {
-          await supabase.from('grilles').delete().eq('id', nouvelleGrilleId)
+          await grillesService.annulerCreationGrille(nouvelleGrilleId)
           setMessage(friendlyErrorMessage())
           return
         }
@@ -349,7 +327,7 @@ export function BibliothequeScreen({
       setRetry((n) => n + 1)
     } catch {
       if (nouvelleGrilleId) {
-        await supabase.from('grilles').delete().eq('id', nouvelleGrilleId)
+        await grillesService.annulerCreationGrille(nouvelleGrilleId)
       }
       setMessage(friendlyErrorMessage())
     } finally {
@@ -366,11 +344,7 @@ export function BibliothequeScreen({
     setMessage(null)
 
     try {
-      const { data, error } = await supabase
-        .from('parties')
-        .insert({ grille_id: grille.id })
-        .select()
-        .single()
+      const { data, error } = await partiesService.creerPartie(grille.id)
 
       if (error || !data) {
         setMessage(friendlyErrorMessage())
@@ -400,11 +374,7 @@ export function BibliothequeScreen({
       // `handleCloturer` de GrilleEnDirecteScreen (Story 2.5) — un update filtré en
       // silence par RLS renverrait sinon un succès sans erreur, sans que la clôture
       // n'ait réellement eu lieu.
-      const { data, error } = await supabase
-        .from('parties')
-        .update({ statut: 'terminee' })
-        .eq('id', partieId)
-        .select()
+      const { data, error } = await partiesService.cloturerPartie(partieId)
 
       if (error || !data || data.length === 0) {
         setMessage(friendlyErrorMessage())
@@ -429,7 +399,7 @@ export function BibliothequeScreen({
       // `.select()` force la représentation de la ligne supprimée : même piège que
       // handleCloturer/handleToggle — un delete filtré en silence par RLS renverrait
       // sinon un succès sans erreur, sans que la grille n'ait réellement été supprimée.
-      const { data, error } = await supabase.from('grilles').delete().eq('id', grille.id).select()
+      const { data, error } = await grillesService.supprimerGrille(grille.id)
 
       if (error || !data || data.length === 0) {
         setMessage(friendlyErrorMessage())
@@ -476,7 +446,7 @@ export function BibliothequeScreen({
 
   if (chargementEchoue) {
     return (
-      <main className="bibliotheque-screen">
+      <main className="page">
         <p className="bibliotheque-screen__message">{friendlyErrorMessage()}</p>
         <Button type="button" variant="primary" onClick={() => setRetry((n) => n + 1)}>
           Réessayer
@@ -510,7 +480,7 @@ export function BibliothequeScreen({
   }
 
   return (
-    <main className="bibliotheque-screen">
+    <main className="page bibliotheque-screen">
       <h1 className="sr-only">Bibliothèque</h1>
       <BrandMark />
 

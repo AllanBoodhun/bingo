@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import { supabase } from '../../lib/supabase/client'
+import { obtenirSession, connecterAnonyme } from '../../services/auth.service'
+import { rejoindrePartie } from '../../services/parties.service'
 import { Button } from '../../components/Button'
 import { lireJoueurPersiste, persisterJoueur, type Joueur } from '../../lib/joueurStorage'
 import { useLienCopie } from '../../lib/useLienCopie'
@@ -57,7 +58,7 @@ export function PartieActiveScreen({ codePartie, grilleNom, onRetour, onAccederG
       try {
         const {
           data: { session },
-        } = await supabase.auth.getSession()
+        } = await obtenirSession()
         if (ignore) return
 
         // Pas de session du tout : premier visiteur, aucune entrée ne peut lui
@@ -101,7 +102,7 @@ export function PartieActiveScreen({ codePartie, grilleNom, onRetour, onAccederG
       // authentifié a déjà une session ici, cette branche ne s'exécute alors jamais.
       const {
         data: { session },
-      } = await supabase.auth.getSession()
+      } = await obtenirSession()
 
       // L'identité définitive à persister : celle de la session existante si présente,
       // sinon celle que `signInAnonymously()` vient de créer — jamais une valeur
@@ -111,7 +112,7 @@ export function PartieActiveScreen({ codePartie, grilleNom, onRetour, onAccederG
       if (session) {
         authUserId = session.user.id
       } else {
-        const { data: authData, error: errorAuth } = await supabase.auth.signInAnonymously()
+        const { data: authData, error: errorAuth } = await connecterAnonyme()
         if (errorAuth || !authData.session) {
           setMessage(friendlyErrorMessage())
           return
@@ -119,10 +120,7 @@ export function PartieActiveScreen({ codePartie, grilleNom, onRetour, onAccederG
         authUserId = authData.session.user.id
       }
 
-      const { data, error } = await supabase.rpc('rejoindre_partie', {
-        p_code_partie: codePartie,
-        p_pseudo: pseudo.trim(),
-      })
+      const { data, error } = await rejoindrePartie(codePartie, pseudo.trim())
 
       if (error || !data) {
         if (/partie_introuvable/.test(error?.message ?? '')) {

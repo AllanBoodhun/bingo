@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { supabase, nettoyerJoueursInvite } from '../../lib/supabase/client'
+import { obtenirSession, inscrire, connecter, nettoyerJoueursInvite } from '../../services/auth.service'
 import { Button } from '../../components/Button'
 import './AuthScreen.scss'
 
@@ -40,10 +40,10 @@ export function AuthScreen() {
       // tentative de connexion ratée (mot de passe erroné, etc.).
       const {
         data: { session: sessionAvant },
-      } = await supabase.auth.getSession()
+      } = await obtenirSession()
 
       if (mode === 'signup') {
-        const { data, error } = await supabase.auth.signUp({ email: trimmedEmail, password })
+        const { data, error } = await inscrire(trimmedEmail, password)
         if (error) {
           setMessage(friendlyErrorMessage(error.message))
           return
@@ -52,7 +52,7 @@ export function AuthScreen() {
           return
         }
       } else {
-        const { error } = await supabase.auth.signInWithPassword({ email: trimmedEmail, password })
+        const { error } = await connecter(trimmedEmail, password)
         if (error) {
           setMessage(friendlyErrorMessage(error.message))
           return

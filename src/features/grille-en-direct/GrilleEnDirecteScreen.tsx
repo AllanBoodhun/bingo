@@ -1,6 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { RealtimeChannel } from '@supabase/supabase-js'
-import { supabase } from '../../lib/supabase/client'
+import { creerCanal, retirerCanal } from '../../services/supabase.service'
+import * as casesService from '../../services/cases.service'
+import * as joueursService from '../../services/joueurs.service'
+import * as partiesService from '../../services/parties.service'
+import * as grillesService from '../../services/grilles.service'
 import { Button } from '../../components/Button'
 import { useLienCopie } from '../../lib/useLienCopie'
 import { construireLienPartie } from '../bibliotheque/utils'
@@ -96,7 +100,7 @@ export function GrilleEnDirecteScreen({ joueur, codePartie, onRetourBibliotheque
       // en parallèle du nouveau (doublons d'événements, fuite de ressources) — le
       // retirer avant tout nouveau fetch, jamais après.
       if (channel) {
-        supabase.removeChannel(channel)
+        retirerCanal(channel)
         channel = undefined
       }
 
@@ -107,22 +111,10 @@ export function GrilleEnDirecteScreen({ joueur, codePartie, onRetourBibliotheque
 
       try {
         const [casesResult, joueursResult, vainqueursResult, partieResult] = await Promise.all([
-          supabase
-            .from('cases')
-            .select('id, position, checked, phrase_id, phrases(texte)')
-            .eq('joueur_id', joueur.id)
-            .order('position'),
-          supabase
-            .from('joueurs')
-            .select('id, pseudo')
-            .eq('partie_id', joueur.partieId)
-            .order('created_at'),
-          supabase
-            .from('parties_vainqueurs')
-            .select('joueur_id')
-            .eq('partie_id', joueur.partieId)
-            .order('declared_at'),
-          supabase.from('parties').select('grille_id, statut').eq('id', joueur.partieId).single(),
+          casesService.listerCasesDeJoueur(joueur.id),
+          joueursService.listerJoueursDePartie(joueur.partieId),
+          partiesService.listerVainqueursDePartie(joueur.partieId),
+          partiesService.obtenirPartie(joueur.partieId),
         ])
 
         if (ignore) return
@@ -195,8 +187,8 @@ export function GrilleEnDirecteScreen({ joueur, codePartie, onRetourBibliotheque
         // (CTA de clôture absent) sur tout échec réseau — jamais l'inverse.
         if (!ignore && !partieError && partieData) {
           const [{ data: grilleData }, { data: monJoueurData }] = await Promise.all([
-            supabase.from('grilles').select('compte_id').eq('id', partieData.grille_id).maybeSingle(),
-            supabase.from('joueurs').select('compte_id').eq('id', joueur.id).maybeSingle(),
+            grillesService.obtenirCompteIdGrille(partieData.grille_id),
+            joueursService.obtenirCompteIdJoueur(joueur.id),
           ])
           if (!ignore) {
             setEstCreateur(
@@ -218,8 +210,7 @@ export function GrilleEnDirecteScreen({ joueur, codePartie, onRetourBibliotheque
         // partie_id/grille_id : les policies select scopent déjà la diffusion Realtime
         // elle-même (AD-7), un filtre applicatif reste nécessaire pour les cas où la RLS
         // couvre plusieurs parties d'un même utilisateur (voir gardes ci-dessous, Story 2.5).
-        channel = supabase
-          .channel(`partie:${joueur.partieId}`)
+        channel = creerCanal(`partie:${joueur.partieId}`)
           .on(
             'postgres_changes',
             { event: 'INSERT', schema: 'public', table: 'joueurs' },
@@ -337,7 +328,7 @@ export function GrilleEnDirecteScreen({ joueur, codePartie, onRetourBibliotheque
       window.removeEventListener('online', handleReconnexion)
       document.removeEventListener('visibilitychange', handleVisibilityChange)
       if (channel) {
-        supabase.removeChannel(channel)
+        retirerCanal(channel)
       }
     }
   }, [joueur.id, joueur.partieId, retry])
@@ -351,11 +342,7 @@ export function GrilleEnDirecteScreen({ joueur, codePartie, onRetourBibliotheque
     // `.select()` force la représentation de la ligne modifiée : un update filtré en
     // silence par RLS (ex. case déjà réassignée) renvoie un succès avec `data: []`,
     // sans `error` — sans ce `.select()`, ce cas ne serait jamais détecté ni annulé.
-    const { data, error } = await supabase
-      .from('cases')
-      .update({ checked: nextChecked })
-      .eq('id', caseItem.id)
-      .select()
+    const { data, error } = await casesService.mettreAJourCase(caseItem.id, nextChecked)
 
     if (error || !data || data.length === 0) {
       setCases((current) =>
@@ -370,11 +357,7 @@ export function GrilleEnDirecteScreen({ joueur, codePartie, onRetourBibliotheque
       // `.select()` force la représentation de la ligne modifiée : même piège que
       // `handleToggle` (Story 2.3) — un update filtré en silence par RLS renverrait
       // sinon un succès sans erreur, sans que la clôture n'ait réellement eu lieu.
-      const { data, error } = await supabase
-        .from('parties')
-        .update({ statut: 'terminee' })
-        .eq('id', joueur.partieId)
-        .select()
+      const { data, error } = await partiesService.cloturerPartie(joueur.partieId)
 
       if (error || !data || data.length === 0) {
         afficherToast(friendlyErrorMessage())

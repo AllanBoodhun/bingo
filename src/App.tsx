@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import './App.scss'
-import { supabase, supabaseConfigError } from './lib/supabase/client'
+import { supabaseConfigError } from './lib/supabase/client'
+import { obtenirSession, ecouterChangementsAuth } from './services/auth.service'
 import type { Joueur } from './lib/joueurStorage'
 import { AuthScreen } from './features/auth/AuthScreen'
 import { BibliothequeScreen } from './features/bibliotheque/BibliothequeScreen'
@@ -44,14 +45,13 @@ function App() {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+    } = ecouterChangementsAuth((_event, nextSession) => {
       receivedAuthEvent = true
       setSession(nextSession)
       setLoading(false)
     })
 
-    supabase.auth
-      .getSession()
+    obtenirSession()
       .then(({ data }) => {
         if (!receivedAuthEvent) {
           setSession(data.session)

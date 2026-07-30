@@ -2,7 +2,7 @@
 title: bingo
 status: final
 created: 2026-07-04
-updated: 2026-07-22
+updated: 2026-07-30
 name: Carnet de fête
 description: Bingo à phrases personnalisées, habillé comme un carnet de fête bricolé à la main — papier crème, encre chaude, découpes légèrement de travers.
 colors:
@@ -176,7 +176,8 @@ Référence visuelle : `mockups/direction-artisanal.html` (formes de case en con
 
 ## Components
 
-- **Case de grille (`grid-cell`)** — carte papier, bordure encre pleine, rotation + coins irréguliers (voir Shapes). État coché : une coche à l'encre terracotta dessinée dans le coin haut-droit de la case, sans jamais recouvrir le texte de la phrase (décision explicite — voir `EXPERIENCE.md`). État "tension" (case proche de compléter une ligne) : liseré intérieur moutarde.
+- **Case de grille (`grid-cell`)** — carte papier, bordure encre pleine, rotation + coins irréguliers (voir Shapes). État coché : une coche à l'encre terracotta dessinée dans le coin haut-droit de la case, sans jamais recouvrir le texte de la phrase (décision explicite — voir `EXPERIENCE.md`). État "tension" (case proche de compléter une ligne) : liseré intérieur moutarde. **2026-07-30** : `grid-cell__texte` tronqué à 3 lignes (`line-clamp` + ellipsis) — garde-fou visuel qui s'applique quelle que soit la longueur du texte saisi, indépendamment de la limite de caractères (voir Champ de phrase).
+- **Bulle de texte complet (`text-reveal-bubble`)** — **nouveau 2026-07-30** — même famille visuelle que `card` (fond papier-carte, bordure pleine encre, ombre plate décalée), coins réguliers (pas de rotation/découpe irrégulière, pour rester lisible comme un élément d'interface plutôt qu'une case de jeu). S'ouvre ancrée à la case concernée (au-dessus ou en dessous selon la place disponible à l'écran) suite à un appui long sur une case au texte tronqué (voir `EXPERIENCE.md.Interaction Primitives`). Se ferme au relâchement ou au tap ailleurs à l'écran.
 - **CTA principal (`cta-primary`)** — fond terracotta, texte papier-carte, sans bordure, ombre plate décalée encre (inchangé). Action qui fait avancer le plus (Lancer la Partie, Rejoindre, Relancer, Créer/Enregistrer la grille).
 - **CTA secondaire (`cta-secondary`)** — **mis à jour 2026-07-22** : fond papier-carte (plein, non transparent), bordure pleine encre, ombre plate décalée encre — même poids visuel que le CTA principal, distingué par la couleur de fond. Actions neutres qui ne font pas avancer ni ne ferment rien (Modifier, Dupliquer).
 - **CTA clôture (`cta-close-game`)** — **mis à jour 2026-07-22** : fond encre plein, texte papier-carte, ombre plate décalée encre (même famille visuelle que les deux autres CTA, distingué par la couleur de fond sombre). Rôle élargi au-delà de la seule clôture de partie : toute action qui **termine, retire ou annule** délibérément quelque chose à l'initiative du créateur — Clôturer la Partie, Supprimer une grille, Annuler une saisie en cours. Le poids visuel fort (fond plein sombre) signale le caractère définitif/volontaire de l'action, sans jamais utiliser un rouge d'alerte agressif — reste dans la palette encre du système.
@@ -187,7 +188,7 @@ Référence visuelle : `mockups/direction-artisanal.html` (formes de case en con
 - **Pile d'avatars (`avatar-stack`)** — cercles superposés (chevauchement -7px), une couleur d'accent différente par avatar en rotation (terracotta / sauge / moutarde) pour distinguer les joueurs sans dépendre de photos de profil.
 - **Carte (`card`)** — **nouveau 2026-07-22** — fond papier-carte, bordure pleine encre, ombre plate décalée encre. Traitement générique de toute carte de contenu structurant (grille dans la liste de la Bibliothèque). Remplace l'ancien traitement pointillé non documenté de ces cartes.
 - **Barre d'action fixe (`sticky-action-bar`)** — **nouveau 2026-07-22** — bandeau fixé en bas d'écran, fond papier-carte, bordure pleine encre en haut, coins arrondis côté haut uniquement. Contient les deux CTA de conclusion d'un formulaire (ex. "Créer la grille" / "Annuler", "Enregistrer" / "Annuler") — toujours un `cta-primary` et un `cta-close-game` côte à côte, jamais plus de deux actions.
-- **Champ de phrase / champ de formulaire** — **mis à jour 2026-07-22** : bordure pleine encre (au lieu de pointillée), fond papier-carte, sans ombre (l'ombre reste réservée aux boutons et cartes, voir §Elevation & Depth). S'applique à tout champ texte du produit (nom de grille, phrase, etc.), ligne éditable, numérotée pour les phrases.
+- **Champ de phrase / champ de formulaire** — **mis à jour 2026-07-22** : bordure pleine encre (au lieu de pointillée), fond papier-carte, sans ombre (l'ombre reste réservée aux boutons et cartes, voir §Elevation & Depth). S'applique à tout champ texte du produit (nom de grille, phrase, etc.), ligne éditable, numérotée pour les phrases. **2026-07-30** : limite de saisie du champ phrase resserrée à ~50 caractères (auparavant 200), calibrée sur le pire cas d'affichage d'une case en grille 5×5 (voir `grid-cell`).
 - **Sélecteur de taille (chips)** — inchangé : bordure pointillée ligne à l'état inactif, fond terracotta plein à l'état actif. Seul contrôle du système à garder la bordure pointillée sur une surface interactive (voir §Elevation & Depth).
 
 ## Do's and Don'ts

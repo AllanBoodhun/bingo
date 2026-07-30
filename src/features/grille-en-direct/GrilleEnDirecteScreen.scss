@@ -40,11 +40,24 @@
   text-align: center;
   font-family: inherit;
   cursor: pointer;
+  /* rotate() vient de la custom property posée en inline style (par case, DESIGN.md
+     §Shapes) — composée ici avec scale() plutôt que fixée en inline, pour que
+     `.grid-cell--en-appui` ci-dessous puisse surcharger uniquement le scale sans
+     jamais perdre la rotation propre à la case. */
+  transform: rotate(var(--grid-cell-rotation, 0deg)) scale(1);
+  transition: transform 450ms ease;
 }
 
 .grid-cell:disabled {
   cursor: default;
   opacity: 0.85;
+}
+
+/* Feedback progressif pendant l'appui long (EXPERIENCE.md §Interaction Primitives) —
+   la durée de transition ci-dessus est calée sur APPUI_LONG_MS pour que le
+   rétrécissement arrive à son terme visuel pile au moment où la bulle s'ouvre. */
+.grid-cell--en-appui {
+  transform: rotate(var(--grid-cell-rotation, 0deg)) scale(0.96);
 }
 
 .grid-cell__texte {
@@ -53,6 +66,43 @@
   font-weight: var(--text-body-sm-weight);
   line-height: var(--text-body-sm-line-height);
   color: var(--color-ink);
+  display: -webkit-box;
+  line-clamp: 3;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Consultation du texte complet d'une case tronquée (override ponctuel de
+   l'interdiction de long-press, EXPERIENCE.md §Interaction Primitives) — rendue via
+   portail vers document.body en `position: fixed` (jamais imbriquée dans le bouton
+   `.grid-cell` pivoté : un enfant en `position: absolute` hériterait visuellement de
+   cette rotation, voir Spec Change Log). Coins réguliers, même famille visuelle que
+   `card` pour rester lisible comme un élément d'interface plutôt qu'une case de jeu. */
+.text-reveal-bubble {
+  position: fixed;
+  z-index: 2;
+  background: var(--color-paper-card);
+  border: 2px solid var(--color-ink);
+  border-radius: var(--radius-default);
+  box-shadow: 3px 3px 0 var(--color-ink);
+  padding: var(--space-3) var(--space-4);
+  max-width: calc(100% - var(--space-screen-margin) * 2);
+  /* Textes legacy saisis avant le resserrage à 50 caractères (jusqu'à 200) : sans ce
+     plafond, une phrase très longue étirerait la bulle au-delà du viewport verticalement. */
+  max-height: 40vh;
+  overflow-y: auto;
+  /* Pas de `pointer-events: none` : sans ça, un tap visuel sur la bulle traverserait
+     jusqu'à la case affichée en dessous (chevauchement possible selon le flip haut/bas)
+     et la cocherait/décocherait par erreur. La bulle capte donc nativement le tap
+     (hit-testing standard), qui continue de bouillonner jusqu'à `document` où le
+     listener existant la ferme normalement. */
+  color: var(--color-ink);
+  font-family: var(--font-family);
+  font-size: var(--text-body-sm-size);
+  font-weight: var(--text-body-sm-weight);
+  line-height: var(--text-body-sm-line-height);
 }
 
 .grid-cell__coche {

@@ -2,7 +2,7 @@
 title: bingo
 status: final
 created: 2026-07-04
-updated: 2026-07-22
+updated: 2026-07-30
 sources:
   - ../../prds/prd-bingo-2026-07-03/prd.md
   - ../../briefs/brief-bingo-2026-07-03/brief.md
@@ -55,11 +55,11 @@ Comportemental. Les specs visuelles vivent dans `DESIGN.md.Components`.
 
 | Composant (`DESIGN.md`) | Usage | Règles comportementales |
 |---|---|---|
-| Case de grille (`grid-cell`) | Grille en direct | Tap pour cocher/décocher (FR-10). Pas de confirmation. Changement immédiat, pas d'animation longue. |
+| Case de grille (`grid-cell`) | Grille en direct | Tap pour cocher/décocher (FR-10). Pas de confirmation. Changement immédiat, pas d'animation longue. **2026-07-30** : texte tronqué (3 lignes max, ellipsis) si trop long pour la case ; appui long révèle le texte complet dans une bulle ancrée à la case (`text-reveal-bubble`, voir `DESIGN.md.Components` et Interaction Primitives ci-dessous) — override ponctuel de l'interdiction de long-press, réservé à cette consultation, sans effet sur le tap de coche. |
 | CTA principal (`cta-primary`) | Lancer la Partie, Rejoindre, Relancer, Créer/Enregistrer la grille | Une seule action principale par écran, jamais deux CTA de même poids visuel côte à côte. |
 | CTA secondaire (`cta-secondary`) | Modifier, Dupliquer | **2026-07-22** : même poids visuel que le CTA principal (bordure pleine + ombre), distingué par la couleur — n'implique pas une hiérarchie d'importance secondaire au sens accessibilité, seulement une distinction sémantique (action neutre vs action qui avance). |
 | CTA clôture (`cta-close-game`) | Grille en direct (Clôturer, créateur uniquement), Bibliothèque et Édition de grille (Supprimer), tout formulaire (Annuler) | Disponible à tout moment pendant qu'une partie est active, pas seulement après un vainqueur (FR-13) — voir §State Patterns. **2026-07-22** : rôle étendu à toute action de fin/retrait/annulation volontaire, pas seulement la clôture de partie — voir `DESIGN.md.Components`. |
-| Champ de phrase / champ de formulaire | Création de grille, Édition de grille | Ligne éditable à tout moment, y compris après validation et pendant une partie en cours (FR-3) — pas de mode "lecture seule" post-validation. **2026-07-22** : le nom de la grille passe d'un pattern "tap sur le titre pour éditer en place" à un champ label + input permanent, aligné visuellement avec le champ de phrase (override de la décision du 2026-07-04 sur ce point précis — voir `.memlog.md`). |
+| Champ de phrase / champ de formulaire | Création de grille, Édition de grille | Ligne éditable à tout moment, y compris après validation et pendant une partie en cours (FR-3) — pas de mode "lecture seule" post-validation. **2026-07-22** : le nom de la grille passe d'un pattern "tap sur le titre pour éditer en place" à un champ label + input permanent, aligné visuellement avec le champ de phrase (override de la décision du 2026-07-04 sur ce point précis — voir `.memlog.md`). **2026-07-30** : limite resserrée à ~50 caractères (auparavant 200), calibrée sur le pire cas d'affichage d'une case (`grid-cell` en grille 5×5) pour que le texte tienne sur 3 lignes sans troncature dans la majorité des cas. |
 | Sélecteur de taille (chips) | Création de grille, Édition de grille | Chips 3×3 à 5×5 (FR-1). Changement de taille désactivé après lancement d'une partie (FR-5) — le chip devient non interactif, pas caché. |
 | Badge "en direct" (`live-badge`) | Grille en direct | Visible en permanence pendant qu'une partie est active. Disparaît seulement à la clôture (FR-13). |
 | Badge de statut (`status-chip`) | Bibliothèque | **2026-07-22** — indique l'état d'une grille sur sa carte (ex. "En cours") ; distinct de `live-badge` qui vit sur l'écran de jeu lui-même. |
@@ -85,12 +85,13 @@ Comportemental. Les specs visuelles vivent dans `DESIGN.md.Components`.
 | Vainqueur déclaré (partie ouverte) | Grille en direct | Overlay "Vainqueur" par-dessus la grille (FR-12), non bloquant — un joueur peut le fermer et continuer à voir sa grille. Le CTA "Clôturer la Partie" du créateur reste au même endroit qu'avant la victoire (FR-13). |
 | Partie clôturée | Grille en direct | Tous les joueurs voient l'état "Partie terminée" ; la grille reste consultable en lecture seule. |
 | Reconnexion après coupure | Grille en direct | Restauration silencieuse de l'état exact (cases cochées, vainqueur déjà annoncé) — pas de rechargement visible, pas de perte de progression (FR-15). |
+| Texte de case tronqué | Grille en direct | **2026-07-30** — case dont le texte dépasse 3 lignes : troncature avec ellipsis, contenu complet consultable via appui long (`text-reveal-bubble`, voir Interaction Primitives). |
 | Rappel de partie en cours | Bibliothèque | Bannière (`banner-reminder`, teinte sauge — **2026-07-22** : bordure pleine + ombre, voir `DESIGN.md`) en tête de liste si une partie du créateur a un vainqueur non clôturé (FR-14). |
 | Historique invité | — (aucune surface) | Un Joueur invité sans compte ne voit aucun historique de parties après la fin d'une Partie — il n'y a pas de surface "mes parties" pour lui (FR-19). |
 
 ## Interaction Primitives
 
-- Tap pour cocher/décocher une case — pas de long-press, pas de swipe sur la grille.
+- Tap pour cocher/décocher une case — pas de swipe sur la grille. **Override 2026-07-30** : l'interdiction de long-press ne s'applique plus qu'au geste de coche lui-même ; un appui long (~450ms) est désormais autorisé, spécifiquement pour révéler le texte complet d'une case tronquée (voir `grid-cell` dans Component Patterns et State Patterns) — action de consultation, distincte du tap qui reste l'unique geste de coche. Feedback visuel progressif pendant l'appui (ex. halo/remplissage) pour signaler que le geste est reconnu ; relâchement avant le seuil ou tap ailleurs annule/ferme sans déclencher de coche.
 - Tap sur une phrase en mode création pour l'éditer en place (pas d'écran séparé).
 - Pas de pull-to-refresh : tout est poussé en temps réel, un rafraîchissement manuel n'a pas de sens ici.
 - **Banni** : animations d'ouverture longues, spinners de chargement visibles sur les actions courantes (cocher une case, rejoindre), confirmations modales pour des actions réversibles (cocher/décocher).

@@ -4,6 +4,11 @@ import * as grillesService from '../../services/grilles.service'
 import * as phrasesService from '../../services/phrases.service'
 import * as partiesService from '../../services/parties.service'
 import * as joueursService from '../../services/joueurs.service'
+import {
+  MESSAGE_PHRASE_TROP_LONGUE,
+  contientPhraseTropLongue,
+  estErreurLongueurPhrase,
+} from '../creation-grille/constants'
 import { Button } from '../../components/Button'
 import { BrandMark } from '../../components/BrandMark'
 import { ConfirmDialog } from '../../components/ConfirmDialog'
@@ -312,6 +317,16 @@ export function BibliothequeScreen({
         return
       }
 
+      // `NOT VALID` sur la contrainte de longueur n'exempte que les lignes déjà en base :
+      // un INSERT (donc une duplication) reste toujours validé. La grille est déjà créée
+      // à ce stade (les phrases ne sont connues qu'après ce fetch) — l'annuler plutôt que
+      // de laisser une grille dupliquée vide si l'insertion échouerait de toute façon.
+      if (contientPhraseTropLongue(phrasesSource)) {
+        await grillesService.annulerCreationGrille(nouvelleGrilleId!)
+        setMessage(MESSAGE_PHRASE_TROP_LONGUE)
+        return
+      }
+
       if (phrasesSource.length > 0) {
         const { error: insertError } = await phrasesService.creerPhrases(
           phrasesSource.map((p) => ({ grille_id: nouvelleGrilleId!, texte: p.texte })),
@@ -319,7 +334,10 @@ export function BibliothequeScreen({
 
         if (insertError) {
           await grillesService.annulerCreationGrille(nouvelleGrilleId!)
-          setMessage(friendlyErrorMessage())
+          // Filet de sécurité : la vérification ci-dessus compare `.length` (UTF-16) à
+          // `char_length()` côté SQL (points de code) — un texte avec des caractères hors
+          // plan de base (emoji, etc.) pourrait y échapper sans dépasser réellement la limite.
+          setMessage(estErreurLongueurPhrase(insertError) ? MESSAGE_PHRASE_TROP_LONGUE : friendlyErrorMessage())
           return
         }
       }

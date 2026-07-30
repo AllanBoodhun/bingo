@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
+import type { PostgrestError } from "@supabase/supabase-js";
 import * as grillesService from "../../services/grilles.service";
 import * as phrasesService from "../../services/phrases.service";
 import * as partiesService from "../../services/parties.service";
@@ -9,6 +10,12 @@ import type {
   Grille as GrilleBibliotheque,
   PartieActive,
 } from "../bibliotheque/types";
+import {
+  TEXTE_MAX_LENGTH,
+  MESSAGE_PHRASE_TROP_LONGUE,
+  contientPhraseTropLongue,
+  estErreurLongueurPhrase,
+} from "./constants";
 import "./CreationGrilleScreen.scss";
 
 type Grille = {
@@ -23,10 +30,20 @@ type Phrase = {
 };
 
 const TAILLES = [3, 4, 5];
-const TEXTE_MAX_LENGTH = 200;
 
 function friendlyErrorMessage(): string {
   return "Un souci est survenu, réessaie dans un instant.";
+}
+
+// Suit l'esprit de `AuthScreen.tsx` (`friendlyErrorMessage(rawMessage)`) : une phrase
+// saisie avant le resserrage de la limite (200 → 50 caractères) peut dépasser la
+// nouvelle contrainte SQL sans jamais avoir été retapée — le message générique masquerait
+// la vraie cause (l'utilisateur croirait à un souci réseau, pas à sa phrase trop longue).
+function friendlyEditErrorMessage(error: PostgrestError): string {
+  if (estErreurLongueurPhrase(error)) {
+    return `Cette phrase dépasse la nouvelle limite de ${TEXTE_MAX_LENGTH} caractères, réduis-la avant d'enregistrer.`;
+  }
+  return friendlyErrorMessage();
 }
 
 type CreationGrilleScreenProps = {
@@ -423,7 +440,7 @@ function ComposerPhrases({
     try {
       const { error } = await phrasesService.modifierPhrase(id, texte);
       if (error) {
-        setMessage(friendlyErrorMessage());
+        setMessage(friendlyEditErrorMessage(error));
         return;
       }
       setPhrases((current) =>
@@ -464,6 +481,14 @@ function ComposerPhrases({
   }
 
   async function handleDupliquer() {
+    // `NOT VALID` sur la contrainte de longueur n'exempte que les lignes déjà en base :
+    // un INSERT (donc une duplication) reste toujours validé. Vérifier ici, avant tout
+    // appel réseau, évite de créer une grille vide qu'il faudrait ensuite annuler.
+    if (contientPhraseTropLongue(phrases)) {
+      setMessage(MESSAGE_PHRASE_TROP_LONGUE);
+      return;
+    }
+
     setDupliquantPending(true);
     setMessage(null);
 
@@ -490,7 +515,13 @@ function ComposerPhrases({
 
         if (insertError) {
           await grillesService.annulerCreationGrille(nouvelleGrilleId!);
-          setMessage(friendlyErrorMessage());
+          // Filet de sécurité : la vérification côté client ci-dessus compare `.length`
+          // (unités UTF-16) à `char_length()` côté SQL (points de code) — un texte avec
+          // des caractères hors plan de base (emoji, etc.) pourrait échapper à cette
+          // vérification sans jamais dépasser réellement la limite Postgres.
+          setMessage(
+            estErreurLongueurPhrase(insertError) ? MESSAGE_PHRASE_TROP_LONGUE : friendlyErrorMessage(),
+          );
           return;
         }
       }

@@ -6,6 +6,7 @@ import * as joueursService from '../../services/joueurs.service'
 import * as partiesService from '../../services/parties.service'
 import * as grillesService from '../../services/grilles.service'
 import { Button } from '../../components/Button'
+import { ConfirmDialog } from '../../components/ConfirmDialog'
 import { useLienCopie } from '../../lib/useLienCopie'
 import { construireLienPartie } from '../bibliotheque/utils'
 import './GrilleEnDirecteScreen.scss'
@@ -69,6 +70,7 @@ export function GrilleEnDirecteScreen({ joueur, codePartie, onRetourBibliotheque
   const [statutPartie, setStatutPartie] = useState<StatutPartie>('en_cours')
   const [estCreateur, setEstCreateur] = useState(false)
   const [clotureEnCours, setClotureEnCours] = useState(false)
+  const [confirmationCloture, setConfirmationCloture] = useState(false)
   // Miroir synchrone de `joueurs`, même raison d'être que `vainqueurIdsRef` : les
   // handlers Realtime (toast de cochage, overlay de vainqueur) doivent résoudre un
   // pseudo à jour même pour un joueur arrivé après l'ouverture du canal — un `const`
@@ -369,6 +371,7 @@ export function GrilleEnDirecteScreen({ joueur, codePartie, onRetourBibliotheque
       afficherToast(friendlyErrorMessage())
     } finally {
       setClotureEnCours(false)
+      setConfirmationCloture(false)
     }
   }
 
@@ -427,9 +430,25 @@ export function GrilleEnDirecteScreen({ joueur, codePartie, onRetourBibliotheque
       )}
 
       {estCreateur && !estTerminee && (
-        <Button type="button" variant="close-game" disabled={clotureEnCours} onClick={handleCloturer}>
+        <Button
+          type="button"
+          variant="close-game"
+          disabled={clotureEnCours}
+          onClick={() => setConfirmationCloture(true)}
+        >
           Clôturer la Partie
         </Button>
+      )}
+
+      {confirmationCloture && (
+        <ConfirmDialog
+          titre="Clôturer la partie ?"
+          message="Les joueurs ne pourront plus rejoindre cette partie."
+          confirmLabel="Clôturer"
+          confirmEnCours={clotureEnCours}
+          onConfirm={handleCloturer}
+          onCancel={() => setConfirmationCloture(false)}
+        />
       )}
     </main>
   )

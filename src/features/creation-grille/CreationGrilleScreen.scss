@@ -12,13 +12,6 @@
   text-align: center;
 }
 
-.creation-grille-screen__row {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--space-2);
-}
-
 .creation-grille-screen__actions {
   display: flex;
   flex-wrap: wrap;
@@ -79,10 +72,14 @@
 }
 
 .creation-grille-screen__phrase-title{
-  display: flex; 
+  display: flex;
   width: 100%;
   justify-content: space-between;
   align-items: center;
+
+  .creation-grille-screen__label {
+    margin-top: 0;
+  }
 }
 .creation-grille-screen__phrase-container{
   width: 100%;
@@ -163,6 +160,21 @@
 
 .phrase-list__item--input {
   display: flex;
+  align-items: center;
+  font-size: var(--text-body-size);
+  color: var(--color-ink);
+  background: var(--color-paper-card);
+  border: 2px solid var(--color-ink);
+  border-radius: var(--radius-default);
+  padding: var(--space-2) var(--space-3);
+
+  .creation-grille-screen__input {
+    border: none;
+    padding: 0;
+    height: auto;
+    background: transparent;
+    width: 100%;
+  }
 }
 
 .page-action-bar{

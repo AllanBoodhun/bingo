@@ -15,6 +15,9 @@ import {
   MESSAGE_PHRASE_TROP_LONGUE,
   contientPhraseTropLongue,
   estErreurLongueurPhrase,
+  MESSAGE_PHRASE_DUPLIQUEE,
+  contientPhraseDupliquee,
+  estErreurPhraseDupliquee,
 } from "./constants";
 import "./CreationGrilleScreen.scss";
 
@@ -42,6 +45,9 @@ function friendlyErrorMessage(): string {
 function friendlyEditErrorMessage(error: PostgrestError): string {
   if (estErreurLongueurPhrase(error)) {
     return `Cette phrase dépasse la nouvelle limite de ${TEXTE_MAX_LENGTH} caractères, réduis-la avant d'enregistrer.`;
+  }
+  if (estErreurPhraseDupliquee(error)) {
+    return MESSAGE_PHRASE_DUPLIQUEE;
   }
   return friendlyErrorMessage();
 }
@@ -114,6 +120,11 @@ function NouvelleGrilleForm({
   async function handleCreer() {
     if (!taille || !complete) return;
 
+    if (contientPhraseDupliquee(phrases)) {
+      setMessage(MESSAGE_PHRASE_DUPLIQUEE);
+      return;
+    }
+
     setPending(true);
     setMessage(null);
 
@@ -136,7 +147,11 @@ function NouvelleGrilleForm({
 
       if (phrasesError) {
         await grillesService.annulerCreationGrille(nouvelleGrilleId!);
-        setMessage(friendlyErrorMessage());
+        setMessage(
+          estErreurPhraseDupliquee(phrasesError)
+            ? MESSAGE_PHRASE_DUPLIQUEE
+            : friendlyErrorMessage(),
+        );
         return;
       }
 
@@ -156,23 +171,25 @@ function NouvelleGrilleForm({
   }
 
   return (
-    <main className="page">
+    <main className="page creation-grille-screen">
       <BrandMark variant="compact" />
       <h1 className="creation-grille-screen__title">Nouvelle Grille</h1>
 
-      <label className="creation-grille-screen__label" htmlFor="nom">
-        Nom de la grille
-      </label>
-      <input
-        id="nom"
-        className="creation-grille-screen__input"
-        type="text"
-        required
-        maxLength={NOM_MAX_LENGTH}
-        disabled={pending}
-        value={nom}
-        onChange={(event) => setNom(event.target.value)}
-      />
+      <div className="creation-grille-screen__input-container">
+        <label className="creation-grille-screen__label" htmlFor="nom">
+          Nom de la grille
+        </label>
+        <input
+          id="nom"
+          className="creation-grille-screen__input"
+          type="text"
+          required
+          maxLength={NOM_MAX_LENGTH}
+          disabled={pending}
+          value={nom}
+          onChange={(event) => setNom(event.target.value)}
+        />
+      </div>
 
       <span className="creation-grille-screen__label">Taille de la grille</span>
       <div className="size-chips">
@@ -196,8 +213,8 @@ function NouvelleGrilleForm({
       </div>
 
       {taille !== null && (
-        <>
-          <div className="creation-grille-screen__row">
+        <div className="creation-grille-screen__phrase-container">
+          <div className="creation-grille-screen__phrase-title">
             <span className="creation-grille-screen__label">
               Phrases de la grille
             </span>
@@ -242,14 +259,14 @@ function NouvelleGrilleForm({
               />
               <Button
                 type="submit"
-                variant="secondary"
+                variant="primary"
                 disabled={pending || !nouvellePhrase.trim()}
               >
                 Ajouter une phrase
               </Button>
             </form>
           )}
-        </>
+        </div>
       )}
 
       {message && <p className="creation-grille-screen__message">{message}</p>}
@@ -371,6 +388,11 @@ function ComposerPhrases({
     const texte = nouvellePhrase.trim();
     if (!texte) return;
 
+    if (phrases.some((p) => p.texte === texte)) {
+      setMessage(MESSAGE_PHRASE_DUPLIQUEE);
+      return;
+    }
+
     setPending(true);
     setMessage(null);
 
@@ -381,7 +403,7 @@ function ComposerPhrases({
       );
 
       if (error || !data) {
-        setMessage(friendlyErrorMessage());
+        setMessage(error ? friendlyEditErrorMessage(error) : friendlyErrorMessage());
         return;
       }
 
@@ -431,6 +453,11 @@ function ComposerPhrases({
     const texte = editingTexte.trim();
     if (!texte) {
       setEditingId((current) => (current === id ? null : current));
+      return;
+    }
+
+    if (phrases.some((p) => p.id !== id && p.texte === texte)) {
+      setMessage(MESSAGE_PHRASE_DUPLIQUEE);
       return;
     }
 

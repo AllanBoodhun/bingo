@@ -18,3 +18,18 @@ export function contientPhraseTropLongue(phrases: { texte: string }[]): boolean 
 export function estErreurLongueurPhrase(error: { code?: string } | null | undefined): boolean {
   return error?.code === "23514";
 }
+
+export const MESSAGE_PHRASE_DUPLIQUEE =
+  "Deux phrases identiques ne sont pas autorisées dans une grille, modifie l'une des deux.";
+
+// La contrainte `unique (grille_id, texte)` rejette un INSERT dès qu'une grille contient
+// deux fois le même texte. Utilisé pour bloquer avant l'appel réseau, avant l'insertion
+// groupée à la création d'une grille.
+export function contientPhraseDupliquee(textes: string[]): boolean {
+  return new Set(textes).size !== textes.length;
+}
+
+// SQLSTATE 23505 (violation UNIQUE) est stable, contrairement au texte de `error.message`.
+export function estErreurPhraseDupliquee(error: { code?: string } | null | undefined): boolean {
+  return error?.code === "23505";
+}

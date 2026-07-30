@@ -237,7 +237,7 @@ function NouvelleGrilleForm({
 
       {message && <p className="creation-grille-screen__message">{message}</p>}
 
-      <div className="sticky-action-bar">
+      <div className="page-action-bar">
         <Button
           type="button"
           variant="primary"
@@ -780,7 +780,7 @@ function ComposerPhrases({
           </form>
         )}
       </div>
-      <div className="sticky-action-bar">
+      <div className="page-action-bar">
         <Button
           type="button"
           variant="primary"

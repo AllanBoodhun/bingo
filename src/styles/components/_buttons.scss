@@ -39,7 +39,7 @@
 
 .cta-secondary {
   border: 2px solid var(--color-ink);
-  border-radius: var(--radius-default);
+  border-radius: var(--radius-sm);
   padding: var(--space-2) var(--space-3);
   font-size: var(--text-body-sm-size);
   font-weight: var(--text-label-caps-weight);
@@ -49,7 +49,7 @@
   background: var(--color-ink);
   color: var(--color-paper-card);
   border: none;
-  border-radius: var(--radius-default);
+  border-radius: var(--radius-sm);
   box-shadow: 3px 3px 0 var(--color-ink);
 }
 

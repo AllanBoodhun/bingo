@@ -164,3 +164,10 @@
 .phrase-list__item--input {
   display: flex;
 }
+
+.page-action-bar{
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  gap: 2rem;
+}

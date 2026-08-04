@@ -212,6 +212,30 @@
   background: var(--color-ink-soft);
 }
 
+/* Avatar d'un autre joueur (jamais le sien, jamais le compteur "+N") : ouvre la
+   consultation en lecture seule de sa grille (voir GrilleAdversaireScreen). Bordure et
+   couleur de fond déjà couvertes par `.avatar-stack__avatar` ci-dessus (même classe de
+   base) : seuls les resets propres à un `<button>` sont nécessaires ici. */
+.avatar-stack__avatar--cliquable {
+  appearance: none;
+  cursor: pointer;
+  font-family: inherit;
+  padding: 0;
+}
+
+/* Layout de la zone de consultation (pseudo du joueur consulté + bouton Retour),
+   même ligne que .grille-en-direct-screen__actions qu'elle remplace visuellement. */
+.grille-adversaire__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.grille-adversaire__header .grille-en-direct-screen__subtitle {
+  text-align: left;
+}
+
 .toast {
   position: fixed;
   left: 50%;

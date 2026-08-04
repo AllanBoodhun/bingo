@@ -1,6 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import type { CSSProperties } from 'react'
-import { createPortal } from 'react-dom'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 import { creerCanal, retirerCanal } from '../../services/supabase.service'
 import * as casesService from '../../services/cases.service'
@@ -9,8 +7,10 @@ import * as partiesService from '../../services/parties.service'
 import * as grillesService from '../../services/grilles.service'
 import { Button } from '../../components/Button'
 import { ConfirmDialog } from '../../components/ConfirmDialog'
+import { GridCell, type CaseGrille } from '../../components/GridCell'
 import { useLienCopie } from '../../lib/useLienCopie'
 import { construireLienPartie } from '../bibliotheque/utils'
+import { GrilleAdversaireScreen } from './GrilleAdversaireScreen'
 import './GrilleEnDirecteScreen.scss'
 
 type Joueur = {
@@ -19,18 +19,14 @@ type Joueur = {
   partieId: string
 }
 
-type JoueurPartie = {
+export type JoueurPartie = {
   id: string
   pseudo: string
 }
 
-type CaseJoueur = {
-  id: string
-  position: number
-  checked: boolean
-  phrase_id: string
-  phrases: { texte: string } | null
-}
+// Alias conservé (nom historique de ce fichier) : forme identique à `CaseGrille`,
+// désormais définie une seule fois dans le composant partagé `GridCell`.
+type CaseJoueur = CaseGrille
 
 type Vainqueur = {
   id: string
@@ -79,6 +75,27 @@ export function GrilleEnDirecteScreen({ joueur, codePartie, onRetourBibliotheque
   // fermé sur l'instantané chargé au montage ne le pourrait jamais.
   const joueursRef = useRef<JoueurPartie[]>([])
 
+  // Joueur dont la grille est actuellement consultée (avatar cliqué dans la pile), ou
+  // `null` quand on affiche sa propre grille. `casesAdversaire` est le contenu de cette
+  // grille consultée, chargé une seule fois au clic puis tenu à jour par les mêmes
+  // handlers Realtime que `cases` (AD-7 : pas de nouvel abonnement par joueur consulté).
+  const [joueurConsulte, setJoueurConsulte] = useState<JoueurPartie | null>(null)
+  const [casesAdversaire, setCasesAdversaire] = useState<CaseJoueur[]>([])
+  const [chargementAdversaire, setChargementAdversaire] = useState(false)
+  const [erreurAdversaire, setErreurAdversaire] = useState(false)
+  // Miroir synchrone de `joueurConsulte`, même pattern que `joueursRef`/`vainqueurIdsRef` :
+  // les handlers Realtime UPDATE `cases`/`phrases` (fermés sur leur valeur de montage)
+  // doivent savoir à chaque événement quel joueur est consulté *maintenant*, pas au
+  // moment où le canal a été ouvert.
+  const joueurConsulteRef = useRef<JoueurPartie | null>(null)
+  // Incrémenté à chaque consultation/retour : une réponse de fetch qui atterrit après
+  // qu'on ait déjà changé de joueur consulté (ou qu'on soit revenu à sa grille) ne doit
+  // jamais écraser un état plus récent.
+  const consultationTokenRef = useRef(0)
+  // Cochages reçus en direct pour le joueur actuellement consulté pendant que son fetch
+  // initial est encore en vol (voir handleConsulterJoueur) — clé = id de la case.
+  const casesAdversaireEventsRef = useRef<Map<string, boolean>>(new Map())
+
   function afficherToast(message: string) {
     if (toastTimerRef.current) {
       clearTimeout(toastTimerRef.current)
@@ -89,6 +106,60 @@ export function GrilleEnDirecteScreen({ joueur, codePartie, onRetourBibliotheque
 
   function resoudrePseudo(joueurId: string): string {
     return joueursRef.current.find((j) => j.id === joueurId)?.pseudo ?? 'Un joueur'
+  }
+
+  async function handleConsulterJoueur(joueurCible: JoueurPartie) {
+    const token = ++consultationTokenRef.current
+    joueurConsulteRef.current = joueurCible
+    setJoueurConsulte(joueurCible)
+    setCasesAdversaire([])
+    setChargementAdversaire(true)
+    setErreurAdversaire(false)
+
+    try {
+      const { data, error } = await casesService.listerCasesDeJoueur(joueurCible.id)
+
+      // Un retour à sa grille (ou un autre avatar cliqué entre-temps) a invalidé cette
+      // requête pendant l'attente réseau — ne jamais appliquer une réponse obsolète.
+      if (consultationTokenRef.current !== token) return
+
+      // Même garde que pour sa propre grille (`casesData.length === 0` et carré parfait) :
+      // un résultat vide ou non carré signale un problème plutôt qu'une grille légitimement
+      // vide, sinon `repeat(0, 1fr)`/`repeat(NaN, 1fr)` en CSS produirait un écran cassé.
+      if (error || !data || data.length === 0 || !Number.isInteger(Math.sqrt(data.length))) {
+        setErreurAdversaire(true)
+        setChargementAdversaire(false)
+        return
+      }
+
+      // Un événement Realtime UPDATE `cases` pour ce joueur peut arriver pendant cet await
+      // (le canal est déjà ouvert et abonné, contrairement au fetch-then-subscribe initial
+      // de l'écran, AD-10) : `casesAdversaire` étant encore vide à ce moment, le handler
+      // Realtime l'aurait ignoré silencieusement. On rejoue ici les cochages bufferisés
+      // pendant l'attente pour ne jamais afficher un état plus ancien que ce qui a déjà
+      // été reçu en direct.
+      const donnees = (data as unknown as CaseJoueur[]).map((c) => {
+        const checkedRecu = casesAdversaireEventsRef.current.get(c.id)
+        return checkedRecu === undefined ? c : { ...c, checked: checkedRecu }
+      })
+
+      setCasesAdversaire(donnees)
+      setChargementAdversaire(false)
+    } catch {
+      if (consultationTokenRef.current !== token) return
+      setErreurAdversaire(true)
+      setChargementAdversaire(false)
+    }
+  }
+
+  function handleRetourGrille() {
+    consultationTokenRef.current += 1
+    joueurConsulteRef.current = null
+    casesAdversaireEventsRef.current = new Map()
+    setJoueurConsulte(null)
+    setCasesAdversaire([])
+    setChargementAdversaire(false)
+    setErreurAdversaire(false)
   }
 
   useEffect(() => {
@@ -233,7 +304,22 @@ export function GrilleEnDirecteScreen({ joueur, codePartie, onRetourBibliotheque
             'postgres_changes',
             { event: 'UPDATE', schema: 'public', table: 'cases' },
             (payload) => {
-              const nouvelleCase = payload.new as { joueur_id: string; checked: boolean }
+              const nouvelleCase = payload.new as { id: string; joueur_id: string; checked: boolean }
+              // Grille consultée (AD-7, pas de nouvel abonnement dédié) : patcher par `id`
+              // de ligne (pas par `position`, cf. Design Notes de la spec) dès que la case
+              // modifiée appartient au joueur actuellement consulté — coche ET décoche,
+              // pas seulement le cas "cochage" ci-dessous qui ne concerne que le toast.
+              if (joueurConsulteRef.current?.id === nouvelleCase.joueur_id) {
+                // Toujours bufferisé, même si le fetch initial n'a pas encore résolu (la
+                // case ne serait alors pas encore présente dans `casesAdversaire`, ce `.map`
+                // serait un no-op) — `handleConsulterJoueur` rejoue ce buffer à la résolution.
+                casesAdversaireEventsRef.current.set(nouvelleCase.id, nouvelleCase.checked)
+                setCasesAdversaire((current) =>
+                  current.map((c) =>
+                    c.id === nouvelleCase.id ? { ...c, checked: nouvelleCase.checked } : c,
+                  ),
+                )
+              }
               // Ne notifier que sur cochage (pas décochage) et jamais pour ses propres cases.
               if (!nouvelleCase.checked || nouvelleCase.joueur_id === joueur.id) return
               // Repli générique conservé en filet de sécurité (ex. écoute `joueurs` pas
@@ -248,6 +334,17 @@ export function GrilleEnDirecteScreen({ joueur, codePartie, onRetourBibliotheque
             (payload) => {
               const phraseModifiee = payload.new as { id: string; texte: string }
               setCases((current) =>
+                current.map((c) =>
+                  c.phrase_id === phraseModifiee.id
+                    ? { ...c, phrases: { texte: phraseModifiee.texte } }
+                    : c,
+                ),
+              )
+              // Une correction de phrase (FR-3) reçue pendant la consultation se répercute
+              // aussi sur la grille consultée (boundary "Always" de la spec) — pas de garde
+              // sur `joueurConsulteRef` nécessaire : si `casesAdversaire` est vide (aucune
+              // consultation en cours), ce `.map` est un no-op inoffensif.
+              setCasesAdversaire((current) =>
                 current.map((c) =>
                   c.phrase_id === phraseModifiee.id
                     ? { ...c, phrases: { texte: phraseModifiee.texte } }
@@ -400,262 +497,71 @@ export function GrilleEnDirecteScreen({ joueur, codePartie, onRetourBibliotheque
     <main className="grille-en-direct-screen">
       <div className="grille-en-direct-screen__header">
         {estTerminee ? <PartieTermineeBadge /> : <LiveBadge />}
-        <AvatarStack joueurs={joueurs} />
+        <AvatarStack joueurs={joueurs} joueurCourantId={joueur.id} onConsulterJoueur={handleConsulterJoueur} />
       </div>
 
-      <div className="grille-en-direct-screen__actions">
-        <Button type="button" variant="secondary" onClick={() => copierLien(lien)}>
-          {lienCopie ? 'Lien copié !' : 'Copier le lien'}
-        </Button>
-        {onRetourBibliotheque && (
-          <Button type="button" variant="secondary" onClick={onRetourBibliotheque}>
-            Retour à la bibliothèque
-          </Button>
-        )}
-      </div>
+      {joueurConsulte ? (
+        <GrilleAdversaireScreen
+          joueur={joueurConsulte}
+          cases={casesAdversaire}
+          chargement={chargementAdversaire}
+          erreur={erreurAdversaire}
+          onRetour={handleRetourGrille}
+        />
+      ) : (
+        <>
+          <div className="grille-en-direct-screen__actions">
+            <Button type="button" variant="secondary" onClick={() => copierLien(lien)}>
+              {lienCopie ? 'Lien copié !' : 'Copier le lien'}
+            </Button>
+            {onRetourBibliotheque && (
+              <Button type="button" variant="secondary" onClick={onRetourBibliotheque}>
+                Retour à la bibliothèque
+              </Button>
+            )}
+          </div>
 
-      <p className="grille-en-direct-screen__subtitle">Tu joues sous le nom {joueur.pseudo}</p>
+          <p className="grille-en-direct-screen__subtitle">Tu joues sous le nom {joueur.pseudo}</p>
 
-      <div
-        className="grille-en-direct-screen__grille"
-        style={{ gridTemplateColumns: `repeat(${cote}, 1fr)` }}
-      >
-        {cases.map((caseItem) => (
-          <GridCell key={caseItem.id} caseItem={caseItem} onToggle={handleToggle} disabled={estTerminee} />
-        ))}
-      </div>
+          <div
+            className="grille-en-direct-screen__grille"
+            style={{ gridTemplateColumns: `repeat(${cote}, 1fr)` }}
+          >
+            {cases.map((caseItem) => (
+              <GridCell key={caseItem.id} caseItem={caseItem} onToggle={handleToggle} disabled={estTerminee} />
+            ))}
+          </div>
+
+          {estCreateur && !estTerminee && (
+            <Button
+              type="button"
+              variant="close-game"
+              disabled={clotureEnCours}
+              onClick={() => setConfirmationCloture(true)}
+            >
+              Clôturer la Partie
+            </Button>
+          )}
+
+          {confirmationCloture && (
+            <ConfirmDialog
+              titre="Clôturer la partie ?"
+              message="Les joueurs ne pourront plus rejoindre cette partie."
+              confirmLabel="Clôturer"
+              confirmEnCours={clotureEnCours}
+              onConfirm={handleCloturer}
+              onCancel={() => setConfirmationCloture(false)}
+            />
+          )}
+        </>
+      )}
 
       {toast && <p className="toast">{toast}</p>}
 
       {vainqueurs.length > 0 && !overlayFerme && (
         <VainqueurOverlay vainqueurs={vainqueurs} onFermer={() => setOverlayFerme(true)} />
       )}
-
-      {estCreateur && !estTerminee && (
-        <Button
-          type="button"
-          variant="close-game"
-          disabled={clotureEnCours}
-          onClick={() => setConfirmationCloture(true)}
-        >
-          Clôturer la Partie
-        </Button>
-      )}
-
-      {confirmationCloture && (
-        <ConfirmDialog
-          titre="Clôturer la partie ?"
-          message="Les joueurs ne pourront plus rejoindre cette partie."
-          confirmLabel="Clôturer"
-          confirmEnCours={clotureEnCours}
-          onConfirm={handleCloturer}
-          onCancel={() => setConfirmationCloture(false)}
-        />
-      )}
     </main>
-  )
-}
-
-type GridCellProps = {
-  caseItem: CaseJoueur
-  onToggle: (caseItem: CaseJoueur) => void
-  disabled: boolean
-}
-
-// Durée de l'appui long avant ouverture de la bulle (EXPERIENCE.md §Interaction
-// Primitives) — aussi calée comme durée de la transition CSS de `.grid-cell--en-appui`
-// pour que le feedback progressif arrive à son terme visuel pile au moment du seuil.
-const APPUI_LONG_MS = 450
-const MARGE_ECRAN_PX = 20
-
-type BullePosition = { top: number; left: number }
-
-function GridCell({ caseItem, onToggle, disabled }: GridCellProps) {
-  // Rotation et rayons de coin calculés une seule fois par case (DESIGN.md §Shapes) :
-  // ne jamais recalculer à chaque rendu, sinon les cases tremblent visuellement.
-  // Deps vide assumé : ce composant est monté avec `key={caseItem.id}` par son parent,
-  // donc une nouvelle instance (et un nouveau calcul) n'existe que pour une nouvelle case.
-  // La rotation passe par une custom property plutôt qu'un `transform` direct : la classe
-  // `.grid-cell--en-appui` (feedback d'appui) doit composer son propre `scale()` par-dessus
-  // cette même rotation, ce qu'un `transform` inline figé rendrait impossible à surcharger
-  // depuis une classe CSS (l'inline style gagne toujours sur une règle de classe).
-  const style = useMemo(() => {
-    const rotation = (Math.random() * 2.4 - 1.2).toFixed(2)
-    const rayon = () => Math.round(9 + Math.random() * 6)
-    return {
-      '--grid-cell-rotation': `${rotation}deg`,
-      borderRadius: `${rayon()}px ${rayon()}px ${rayon()}px ${rayon()}px`,
-    } as CSSProperties
-  }, [])
-
-  const boutonRef = useRef<HTMLButtonElement>(null)
-  const texteRef = useRef<HTMLSpanElement>(null)
-  const bulleRef = useRef<HTMLDivElement>(null)
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  // Consommé par le `onClick` natif (qui suit toujours le `pointerup`) pour empêcher le
-  // toggle après un appui long réussi ; remis à `false` dès le DÉBUT de chaque nouveau
-  // `onPointerDown` (voir Design Notes de la spec) — jamais seulement à sa consommation
-  // par `onClick`, sinon un pointeur qui quitte l'élément sans jamais déclencher de
-  // `click` laisserait le flag bloqué à `true` indéfiniment.
-  const supprimerToggleRef = useRef(false)
-
-  const [tronque, setTronque] = useState(false)
-  const [enAppui, setEnAppui] = useState(false)
-  const [bulleOuverte, setBulleOuverte] = useState(false)
-  const [bullePosition, setBullePosition] = useState<BullePosition | null>(null)
-
-  // Pas de moyen CSS pur pour savoir si `line-clamp` a effectivement tronqué le texte —
-  // comparaison scrollHeight/clientHeight, recalculée via ResizeObserver (case dimensionnée
-  // en `1fr`/`aspect-ratio`, sensible à la taille d'écran) et sur changement du texte
-  // lui-même : FR-3 permet au créateur d'éditer une phrase pendant une partie active, donc
-  // `caseItem.phrases?.texte` peut changer sans qu'aucun resize ne se produise.
-  useLayoutEffect(() => {
-    const element = texteRef.current
-    if (!element) return
-
-    function mesurer() {
-      if (!element) return
-      setTronque(element.scrollHeight > element.clientHeight + 1)
-    }
-
-    mesurer()
-    const observer = new ResizeObserver(mesurer)
-    observer.observe(element)
-    return () => observer.disconnect()
-  }, [caseItem.phrases?.texte])
-
-  // Le timer d'appui long ne doit jamais survivre au démontage du composant (case
-  // retirée de la grille pendant l'attente des 450ms) — sans ce nettoyage, le callback
-  // ouvrirait une bulle pour un bouton qui n'existe plus.
-  useEffect(() => {
-    return () => {
-      if (timerRef.current) {
-        clearTimeout(timerRef.current)
-      }
-    }
-  }, [])
-
-  // Positionnement de la bulle hors du bouton pivoté (voir Design Notes, changement
-  // d'approche itération 2) : mesure réelle après un premier rendu invisible plutôt
-  // qu'une largeur estimée, pour clamper correctement même les textes legacy très longs.
-  useLayoutEffect(() => {
-    if (!bulleOuverte) {
-      setBullePosition(null)
-      return
-    }
-    const bouton = boutonRef.current
-    const bulle = bulleRef.current
-    if (!bouton || !bulle) return
-
-    const rectBouton = bouton.getBoundingClientRect()
-    const rectBulle = bulle.getBoundingClientRect()
-
-    let left = rectBouton.left + rectBouton.width / 2 - rectBulle.width / 2
-    left = Math.max(MARGE_ECRAN_PX, Math.min(left, window.innerWidth - rectBulle.width - MARGE_ECRAN_PX))
-
-    const espaceAuDessus = rectBouton.top
-    const espaceEnDessous = window.innerHeight - rectBouton.bottom
-    const placerAuDessus = espaceAuDessus >= rectBulle.height + 8 || espaceAuDessus > espaceEnDessous
-    const top = placerAuDessus ? rectBouton.top - rectBulle.height - 8 : rectBouton.bottom + 8
-
-    setBullePosition({ top, left })
-  }, [bulleOuverte])
-
-  // Un resize/rotation d'écran invalide la position déjà calculée (colonne de bord qui
-  // change de marge disponible) — fermer plutôt que de laisser une bulle mal positionnée.
-  useEffect(() => {
-    if (!bulleOuverte) return
-    function handleResize() {
-      setBulleOuverte(false)
-      setEnAppui(false)
-    }
-    window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
-  }, [bulleOuverte])
-
-  // Tap ailleurs à l'écran ferme la bulle sans déclencher de toggle. La bulle est rendue
-  // via portail (hors de `boutonRef`), donc un pointerdown sur la bulle elle-même passe
-  // aussi cette condition et la ferme normalement — cohérent avec le fait qu'elle capte
-  // désormais le tap nativement (pas de `pointer-events: none`, voir GrilleEnDirecteScreen.scss).
-  useEffect(() => {
-    if (!bulleOuverte) return
-    function handlePointerDownDehors(event: PointerEvent) {
-      if (boutonRef.current?.contains(event.target as Node)) return
-      setBulleOuverte(false)
-      setEnAppui(false)
-    }
-    document.addEventListener('pointerdown', handlePointerDownDehors)
-    return () => document.removeEventListener('pointerdown', handlePointerDownDehors)
-  }, [bulleOuverte])
-
-  function annulerAppui() {
-    if (timerRef.current) {
-      clearTimeout(timerRef.current)
-      timerRef.current = null
-    }
-    setEnAppui(false)
-    setBulleOuverte(false)
-  }
-
-  function handlePointerDown() {
-    supprimerToggleRef.current = false
-    if (disabled || !tronque) return
-    // Nettoyer un timer déjà en cours (deux pointeurs sur la même case sans `pointerup`
-    // intermédiaire) : sinon l'ancien timer devient orphelin, non annulable par les
-    // handlers suivants qui n'agissent que sur le nouveau `timerRef.current`, et peut
-    // rouvrir la bulle bien après la fin perçue de l'interaction.
-    if (timerRef.current) {
-      clearTimeout(timerRef.current)
-    }
-    setEnAppui(true)
-    timerRef.current = setTimeout(() => {
-      supprimerToggleRef.current = true
-      setBulleOuverte(true)
-    }, APPUI_LONG_MS)
-  }
-
-  function handleClick() {
-    if (supprimerToggleRef.current) {
-      supprimerToggleRef.current = false
-      return
-    }
-    onToggle(caseItem)
-  }
-
-  return (
-    <>
-      <button
-        ref={boutonRef}
-        type="button"
-        className={['grid-cell', enAppui ? 'grid-cell--en-appui' : ''].filter(Boolean).join(' ')}
-        style={style}
-        aria-pressed={caseItem.checked}
-        disabled={disabled}
-        onClick={handleClick}
-        onPointerDown={handlePointerDown}
-        onPointerUp={annulerAppui}
-        onPointerLeave={annulerAppui}
-        onPointerCancel={annulerAppui}
-      >
-        <span ref={texteRef} className="grid-cell__texte">{caseItem.phrases?.texte}</span>
-        {caseItem.checked && <span className="grid-cell__coche">✓</span>}
-      </button>
-      {bulleOuverte &&
-        createPortal(
-          <div
-            ref={bulleRef}
-            className="text-reveal-bubble"
-            style={
-              bullePosition
-                ? { top: bullePosition.top, left: bullePosition.left, visibility: 'visible' }
-                : { top: 0, left: 0, visibility: 'hidden' }
-            }
-          >
-            {caseItem.phrases?.texte}
-          </div>,
-          document.body,
-        )}
-    </>
   )
 }
 
@@ -676,22 +582,43 @@ const COULEURS_AVATAR = ['terracotta', 'sage', 'mustard']
 
 type AvatarStackProps = {
   joueurs: JoueurPartie[]
+  joueurCourantId: string
+  onConsulterJoueur: (joueur: JoueurPartie) => void
 }
 
-function AvatarStack({ joueurs }: AvatarStackProps) {
+function AvatarStack({ joueurs, joueurCourantId, onConsulterJoueur }: AvatarStackProps) {
   const visibles = joueurs.slice(0, 3)
   const reste = joueurs.length - visibles.length
 
   return (
     <div className="avatar-stack">
-      {visibles.map((j, index) => (
-        <span
-          key={j.id}
-          className={`avatar-stack__avatar avatar-stack__avatar--${COULEURS_AVATAR[index % COULEURS_AVATAR.length]}`}
-        >
-          {Array.from(j.pseudo)[0]?.toUpperCase()}
-        </span>
-      ))}
+      {visibles.map((j, index) => {
+        const classe = `avatar-stack__avatar avatar-stack__avatar--${COULEURS_AVATAR[index % COULEURS_AVATAR.length]}`
+        const initiale = Array.from(j.pseudo)[0]?.toUpperCase()
+
+        // Pas de bouton sur son propre avatar (boundary "Never" de la spec) : reste un
+        // simple `span`, jamais interactif. Le compteur "+N" ci-dessous n'est jamais
+        // cliquable non plus (aucun joueur précis associé).
+        if (j.id === joueurCourantId) {
+          return (
+            <span key={j.id} className={classe}>
+              {initiale}
+            </span>
+          )
+        }
+
+        return (
+          <button
+            key={j.id}
+            type="button"
+            className={`${classe} avatar-stack__avatar--cliquable`}
+            aria-label={`Consulter la grille de ${j.pseudo}`}
+            onClick={() => onConsulterJoueur(j)}
+          >
+            {initiale}
+          </button>
+        )
+      })}
       {reste > 0 && <span className="avatar-stack__compteur">+{reste}</span>}
     </div>
   )

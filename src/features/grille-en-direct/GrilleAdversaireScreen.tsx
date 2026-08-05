@@ -28,9 +28,6 @@ export function GrilleAdversaireScreen({ joueur, cases, chargement, erreur, onRe
     <>
       <div className="grille-adversaire__header">
         <p className="grille-en-direct-screen__subtitle">Grille de {joueur.pseudo}</p>
-        <Button type="button" variant="secondary" onClick={onRetour}>
-          Retour
-        </Button>
       </div>
 
       {erreur && <p className="grille-en-direct-screen__message">{friendlyErrorMessage()}</p>}
@@ -51,6 +48,11 @@ export function GrilleAdversaireScreen({ joueur, cases, chargement, erreur, onRe
           ))}
         </div>
       )}
+      <div className="grille-adversaire__actions">
+        <Button type="button" variant="secondary" color="outlinedWhite" onClick={onRetour}>
+          Retour
+        </Button>
+      </div>
     </>
   )
 }

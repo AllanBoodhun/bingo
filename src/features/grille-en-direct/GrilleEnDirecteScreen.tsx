@@ -497,7 +497,12 @@ export function GrilleEnDirecteScreen({ joueur, codePartie, onRetourBibliotheque
     <main className="grille-en-direct-screen">
       <div className="grille-en-direct-screen__header">
         {estTerminee ? <PartieTermineeBadge /> : <LiveBadge />}
-        <AvatarStack joueurs={joueurs} joueurCourantId={joueur.id} onConsulterJoueur={handleConsulterJoueur} />
+        <AvatarStack
+          joueurs={joueurs}
+          joueurCourantId={joueur.id}
+          onConsulterJoueur={handleConsulterJoueur}
+          onRetourGrille={handleRetourGrille}
+        />
       </div>
 
       {joueurConsulte ? (
@@ -585,9 +590,10 @@ type AvatarStackProps = {
   joueurs: JoueurPartie[]
   joueurCourantId: string
   onConsulterJoueur: (joueur: JoueurPartie) => void
+  onRetourGrille: () => void
 }
 
-function AvatarStack({ joueurs, joueurCourantId, onConsulterJoueur }: AvatarStackProps) {
+function AvatarStack({ joueurs, joueurCourantId, onConsulterJoueur, onRetourGrille }: AvatarStackProps) {
   const [menuOuvert, setMenuOuvert] = useState(false)
   const conteneurRef = useRef<HTMLDivElement>(null)
   const visibles = joueurs.slice(0, 3)
@@ -615,6 +621,11 @@ function AvatarStack({ joueurs, joueurCourantId, onConsulterJoueur }: AvatarStac
   function handleChoisirJoueur(j: JoueurPartie) {
     setMenuOuvert(false)
     onConsulterJoueur(j)
+  }
+
+  function handleChoisirVous() {
+    setMenuOuvert(false)
+    onRetourGrille()
   }
 
   return (
@@ -645,12 +656,20 @@ function AvatarStack({ joueurs, joueurCourantId, onConsulterJoueur }: AvatarStac
           <p className="avatar-stack__menu-titre">Liste des joueurs</p>
           <ul className="avatar-stack__menu-liste" role="menu" aria-label="Liste des joueurs">
             {joueurs.map((j) => {
-              // Sa propre ligne (repère "vous", boundary "Never" de la spec) reste un
-              // simple texte non interactif — seuls les autres joueurs ouvrent leur grille.
+              // Sa propre ligne (repère "vous") est aussi cliquable : ça ramène à sa
+              // propre grille, un retour plus direct que de fermer le menu et chercher
+              // le bouton "Retour" quand on consulte déjà la grille d'un autre joueur.
               if (j.id === joueurCourantId) {
                 return (
-                  <li key={j.id} role="none" className="avatar-stack__menu-item">
-                    {j.pseudo} <span className="avatar-stack__menu-vous">(vous)</span>
+                  <li key={j.id} role="none">
+                    <button
+                      type="button"
+                      role="menuitem"
+                      className="avatar-stack__menu-item avatar-stack__menu-item--cliquable"
+                      onClick={handleChoisirVous}
+                    >
+                      {j.pseudo} <span className="avatar-stack__menu-vous">(vous)</span>
+                    </button>
                   </li>
                 )
               }

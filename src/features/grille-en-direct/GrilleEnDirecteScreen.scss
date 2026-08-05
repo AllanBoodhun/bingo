@@ -256,11 +256,11 @@
   right: 0;
   z-index: 1;
   min-width: 180px;
-  padding: var(--space-2) var(--space-1) var(--space-1);
+  padding: var(--space-3) var(--space-2) var(--space-2);
   background: var(--color-paper-card);
-  border: 2px solid var(--color-ink);
-  border-radius: var(--radius-default);
-  box-shadow: 3px 3px 0 var(--color-ink);
+  border: 1px solid var(--color-ink);
+  border-radius: var(--radius-sm);
+  // box-shadow: 3px 3px 0 var(--color-ink);
 }
 
 .avatar-stack__menu-titre {
@@ -321,6 +321,11 @@
 
 .grille-adversaire__header .grille-en-direct-screen__subtitle {
   text-align: left;
+}
+
+.grille-adversaire__actions{
+  width: 100%;
+  display: contents;
 }
 
 .toast {

@@ -510,17 +510,6 @@ export function GrilleEnDirecteScreen({ joueur, codePartie, onRetourBibliotheque
         />
       ) : (
         <>
-          <div className="grille-en-direct-screen__actions">
-            <Button type="button" variant="secondary" onClick={() => copierLien(lien)}>
-              {lienCopie ? 'Lien copié !' : 'Copier le lien'}
-            </Button>
-            {onRetourBibliotheque && (
-              <Button type="button" variant="secondary" onClick={onRetourBibliotheque}>
-                Retour à la bibliothèque
-              </Button>
-            )}
-          </div>
-
           <p className="grille-en-direct-screen__subtitle">Tu joues sous le nom {joueur.pseudo}</p>
 
           <div
@@ -531,16 +520,28 @@ export function GrilleEnDirecteScreen({ joueur, codePartie, onRetourBibliotheque
               <GridCell key={caseItem.id} caseItem={caseItem} onToggle={handleToggle} disabled={estTerminee} />
             ))}
           </div>
-
+            <div className="grille-en-direct-screen__actions">
+              <Button type="button" variant="secondary" color="filledRed" onClick={() => copierLien(lien)}>
+                {lienCopie ? 'Lien copié !' : 'Copier le lien'}
+              </Button>
+              {onRetourBibliotheque && (
+                <Button type="button" variant="secondary" color="outlinedWhite" onClick={onRetourBibliotheque}>
+                  Retour à la bibliothèque
+                </Button>
+              )}
+          </div>
+          
           {estCreateur && !estTerminee && (
-            <Button
-              type="button"
-              variant="close-game"
-              disabled={clotureEnCours}
-              onClick={() => setConfirmationCloture(true)}
-            >
-              Clôturer la Partie
-            </Button>
+            <div className="grille-en-direct__close-game">
+              <Button
+                type="button"
+                variant="close-game"
+                disabled={clotureEnCours}
+                onClick={() => setConfirmationCloture(true)}
+              >
+                Clôturer la Partie
+              </Button>
+            </div>
           )}
 
           {confirmationCloture && (

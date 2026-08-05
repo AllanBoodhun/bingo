@@ -587,39 +587,89 @@ type AvatarStackProps = {
 }
 
 function AvatarStack({ joueurs, joueurCourantId, onConsulterJoueur }: AvatarStackProps) {
+  const [menuOuvert, setMenuOuvert] = useState(false)
+  const conteneurRef = useRef<HTMLDivElement>(null)
   const visibles = joueurs.slice(0, 3)
   const reste = joueurs.length - visibles.length
 
-  return (
-    <div className="avatar-stack">
-      {visibles.map((j, index) => {
-        const classe = `avatar-stack__avatar avatar-stack__avatar--${COULEURS_AVATAR[index % COULEURS_AVATAR.length]}`
-        const initiale = Array.from(j.pseudo)[0]?.toUpperCase()
+  useEffect(() => {
+    if (!menuOuvert) return
 
-        // Pas de bouton sur son propre avatar (boundary "Never" de la spec) : reste un
-        // simple `span`, jamais interactif. Le compteur "+N" ci-dessous n'est jamais
-        // cliquable non plus (aucun joueur précis associé).
-        if (j.id === joueurCourantId) {
+    function handleClicExterieur(event: MouseEvent) {
+      if (!conteneurRef.current?.contains(event.target as Node)) {
+        setMenuOuvert(false)
+      }
+    }
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') setMenuOuvert(false)
+    }
+    document.addEventListener('mousedown', handleClicExterieur)
+    window.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.removeEventListener('mousedown', handleClicExterieur)
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [menuOuvert])
+
+  function handleChoisirJoueur(j: JoueurPartie) {
+    setMenuOuvert(false)
+    onConsulterJoueur(j)
+  }
+
+  return (
+    <div className="avatar-stack-conteneur" ref={conteneurRef}>
+      <button
+        type="button"
+        className="avatar-stack"
+        aria-haspopup="menu"
+        aria-expanded={menuOuvert}
+        aria-label="Consulter la grille d'un autre joueur"
+        onClick={() => setMenuOuvert((ouvert) => !ouvert)}
+      >
+        {visibles.map((j, index) => {
+          const classe = `avatar-stack__avatar avatar-stack__avatar--${COULEURS_AVATAR[index % COULEURS_AVATAR.length]}`
+          const initiale = Array.from(j.pseudo)[0]?.toUpperCase()
+
           return (
             <span key={j.id} className={classe}>
               {initiale}
             </span>
           )
-        }
+        })}
+        {reste > 0 && <span className="avatar-stack__compteur">+{reste}</span>}
+      </button>
 
-        return (
-          <button
-            key={j.id}
-            type="button"
-            className={`${classe} avatar-stack__avatar--cliquable`}
-            aria-label={`Consulter la grille de ${j.pseudo}`}
-            onClick={() => onConsulterJoueur(j)}
-          >
-            {initiale}
-          </button>
-        )
-      })}
-      {reste > 0 && <span className="avatar-stack__compteur">+{reste}</span>}
+      {menuOuvert && (
+        <div className="avatar-stack__menu">
+          <p className="avatar-stack__menu-titre">Liste des joueurs</p>
+          <ul className="avatar-stack__menu-liste" role="menu" aria-label="Liste des joueurs">
+            {joueurs.map((j) => {
+              // Sa propre ligne (repère "vous", boundary "Never" de la spec) reste un
+              // simple texte non interactif — seuls les autres joueurs ouvrent leur grille.
+              if (j.id === joueurCourantId) {
+                return (
+                  <li key={j.id} role="none" className="avatar-stack__menu-item">
+                    {j.pseudo} <span className="avatar-stack__menu-vous">(vous)</span>
+                  </li>
+                )
+              }
+
+              return (
+                <li key={j.id} role="none">
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="avatar-stack__menu-item avatar-stack__menu-item--cliquable"
+                    onClick={() => handleChoisirJoueur(j)}
+                  >
+                    {j.pseudo}
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
+        </div>
+      )}
     </div>
   )
 }

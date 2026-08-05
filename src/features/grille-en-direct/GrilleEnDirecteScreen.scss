@@ -172,7 +172,21 @@
   letter-spacing: var(--text-caption-letter-spacing);
 }
 
+/* Positionne le dropdown (ci-dessous) relativement à la pile d'avatars. */
+.avatar-stack-conteneur {
+  position: relative;
+}
+
+/* La pile entière est désormais un seul déclencheur (bouton) plutôt qu'un avatar
+   cliquable par joueur (moins intuitif, cf. Spec Change Log) : un clic ouvre le
+   dropdown listant tous les autres joueurs, y compris ceux masqués derrière le "+N". */
 .avatar-stack {
+  appearance: none;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: inherit;
   display: flex;
   align-items: center;
 }
@@ -212,15 +226,67 @@
   background: var(--color-ink-soft);
 }
 
-/* Avatar d'un autre joueur (jamais le sien, jamais le compteur "+N") : ouvre la
-   consultation en lecture seule de sa grille (voir GrilleAdversaireScreen). Bordure et
-   couleur de fond déjà couvertes par `.avatar-stack__avatar` ci-dessus (même classe de
-   base) : seuls les resets propres à un `<button>` sont nécessaires ici. */
-.avatar-stack__avatar--cliquable {
-  appearance: none;
-  cursor: pointer;
-  font-family: inherit;
+/* Dropdown listant tous les joueurs (pseudos), même famille visuelle que `.card` /
+   `.text-reveal-bubble` : coins réguliers, ombre portée "carnet de fête". Aligné à
+   droite du déclencheur car la pile d'avatars est elle-même à droite du header. */
+.avatar-stack__menu {
+  position: absolute;
+  top: calc(100% + var(--space-2));
+  right: 0;
+  z-index: 1;
+  min-width: 180px;
+  padding: var(--space-2) var(--space-1) var(--space-1);
+  background: var(--color-paper-card);
+  border: 2px solid var(--color-ink);
+  border-radius: var(--radius-default);
+  box-shadow: 3px 3px 0 var(--color-ink);
+}
+
+.avatar-stack__menu-titre {
+  margin: 0;
+  padding: 0 var(--space-2) var(--space-2);
+  font-size: var(--text-caption-size);
+  font-weight: var(--text-label-caps-weight);
+  letter-spacing: var(--text-caption-letter-spacing);
+  text-transform: uppercase;
+  color: var(--color-ink-soft);
+}
+
+.avatar-stack__menu-liste {
+  margin: 0;
   padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.avatar-stack__menu-item {
+  width: 100%;
+  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-3);
+  text-align: left;
+  font-family: inherit;
+  font-size: var(--text-body-sm-size);
+  font-weight: var(--text-body-sm-weight);
+  color: var(--color-ink);
+}
+
+.avatar-stack__menu-item--cliquable {
+  appearance: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.avatar-stack__menu-item--cliquable:hover,
+.avatar-stack__menu-item--cliquable:focus-visible {
+  background: var(--color-paper-bg);
+}
+
+.avatar-stack__menu-vous {
+  color: var(--color-ink-soft);
+  font-weight: var(--text-body-sm-weight);
 }
 
 /* Layout de la zone de consultation (pseudo du joueur consulté + bouton Retour),

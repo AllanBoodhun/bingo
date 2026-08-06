@@ -23,7 +23,7 @@ FR-1: Le créateur peut créer une grille en choisissant une taille N×N (N entr
 FR-2: Le créateur donne un nom à chaque grille créée.
 FR-3: Le créateur peut modifier le texte d'une phrase à tout moment, y compris en partie ; la correction se répercute en temps réel sur tous les joueurs déjà distribués ; la position de la phrase dans les grilles déjà distribuées ne change pas.
 FR-4: Le créateur peut dupliquer une grille existante en une nouvelle grille modifiable indépendamment.
-FR-5: Le créateur peut lancer une partie à partir d'une grille validée ; une fois lancée, la taille de la grille ne peut plus être modifiée (le texte des phrases reste modifiable, FR-3).
+FR-5: Le créateur peut lancer une partie à partir d'une grille validée ; la grille (taille et texte des phrases, FR-3) reste modifiable à tout moment, y compris après lancement.
 FR-6: Au lancement, le système distribue aléatoirement les phrases dans la grille de chaque joueur ; deux joueurs de la même partie n'ont jamais la même disposition.
 FR-7: Le système génère un lien/code de partie unique, partageable hors app.
 FR-8: Un joueur peut rejoindre une partie via le lien/code, avec ou sans compte (mode invité, pseudo temporaire) ; une partie accepte entre 1 et 6 joueurs (créateur inclus) ; le lien est réutilisable, pas à usage unique.

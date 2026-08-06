@@ -86,7 +86,7 @@ La flèche ne remonte jamais : l'Autorité ne dépend jamais de la couche de pr�
 
 - **Binds:** toutes les tables du schéma applicatif
 - **Prevents:** qu'un client puisse écrire un champ dont la cohérence dépend de tous les joueurs (ex. déclarer soi-même un vainqueur, clôturer une partie qui n'est pas la sienne, insérer sa propre ligne `cases` avec la position de son choix)
-- **Rule:** un Joueur ne peut écrire (UPDATE) que le champ `checked` de ses propres lignes `cases`. Seul le Créateur peut écrire `grilles.nom`/`grilles.taille` (taille verrouillée après lancement, FR-5), `phrases.texte` (à tout moment, FR-3), et `parties.statut` (clôture, FR-13). Aucun client — créateur inclus — n'a de droit INSERT direct sur `joueurs`, `cases` ou `parties_vainqueurs` : ces trois tables ne sont écrites que par les fonctions serveur `SECURITY DEFINER` des AD-3 et AD-9.
+- **Rule:** un Joueur ne peut écrire (UPDATE) que le champ `checked` de ses propres lignes `cases`. Seul le Créateur peut écrire `grilles.nom`/`grilles.taille` (à tout moment, y compris après lancement, FR-5), `phrases.texte` (à tout moment, FR-3), et `parties.statut` (clôture, FR-13). Aucun client — créateur inclus — n'a de droit INSERT direct sur `joueurs`, `cases` ou `parties_vainqueurs` : ces trois tables ne sont écrites que par les fonctions serveur `SECURITY DEFINER` des AD-3 et AD-9.
 
 ### AD-9 — Rejoindre une partie et distribuer la grille sont une seule opération serveur [ADOPTED]
 

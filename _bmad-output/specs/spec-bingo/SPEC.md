@@ -26,7 +26,7 @@ bingo remplace le bingo papier à phrases personnalisées par un jeu multijoueur
 
 - **CAP-2 — Lancement et invitation à une partie**
   - **intent:** Le créateur transforme une grille validée en partie jouable et invite ses proches par un lien/code réutilisable, avec ou sans compte.
-  - **success:** La taille de grille est verrouillée une fois la partie lancée (le texte des phrases reste modifiable) ; chaque joueur reçoit une distribution aléatoire des phrases qui ne coïncide jamais avec celle d'un autre joueur de la même partie ; la partie accepte de 1 à 6 joueurs, créateur inclus.
+  - **success:** La grille (taille et texte des phrases) reste modifiable à tout moment, y compris après le lancement de la partie ; chaque joueur reçoit une distribution aléatoire des phrases qui ne coïncide jamais avec celle d'un autre joueur de la même partie ; la partie accepte de 1 à 6 joueurs, créateur inclus.
 
 - **CAP-5 — Jouer seul, sans inviter personne**
   - **intent:** Le créateur peut lancer une partie et la rejoindre comme seul joueur, sans attendre ni inviter d'autres joueurs.
@@ -49,7 +49,7 @@ bingo remplace le bingo papier à phrases personnalisées par un jeu multijoueur
 - Taille de grille N×N, N entre 3 et 5.
 - Une partie accepte de 1 à 6 joueurs, créateur inclus — le solo est un chemin valide, pas un cas limite accidentel.
 - Le lien/code de partie est réutilisable — jamais un lien à usage unique.
-- La taille de grille est verrouillée après le lancement de la partie ; le texte des phrases reste modifiable à tout moment, y compris en partie.
+- La grille (taille et texte des phrases) reste modifiable à tout moment, y compris en partie et après le lancement.
 - Le cochage reste strictement déclaratif : aucune vérification ou arbitrage central des cases cochées.
 - Un joueur invité (sans compte) ne conserve aucun historique après la fin de la partie.
 - Un joueur non-créateur (même avec compte) ne peut jamais clôturer ni modifier la partie ou la grille d'un autre — seule l'action Dupliquer (copie indépendante, sans lien retenu vers l'original) lui est ouverte.

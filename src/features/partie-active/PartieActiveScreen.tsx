@@ -196,13 +196,13 @@ export function PartieActiveScreen({ codePartie, grilleNom, onRetour, onAccederG
       {message && <p className="partie-active-screen__message">{message}</p>}
 
       <p className="partie-active-screen__lien">{lien}</p>
-      <Button type="button" variant="secondary" onClick={() => copierLien(lien)}>
+      <Button type="button" variant="secondary" color="outlinedWhite" onClick={() => copierLien(lien)}>
         {lienCopie ? 'Lien copié !' : 'Copier le lien'}
       </Button>
 
       {onRetour && (
         <div className="partie-active-screen__actions">
-          <Button type="button" variant="secondary" onClick={onRetour}>
+          <Button type="button" variant="secondary" color="filledBlack" onClick={onRetour}>
             Retour
           </Button>
         </div>

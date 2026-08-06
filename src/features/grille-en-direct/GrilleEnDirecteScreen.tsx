@@ -713,7 +713,7 @@ function VainqueurOverlay({ vainqueurs, onFermer }: VainqueurOverlayProps) {
       <p className="vainqueur-overlay__texte">
         {label} : {noms} 🎉
       </p>
-      <Button type="button" variant="secondary" onClick={onFermer}>
+      <Button type="button" variant="secondary" color="outlinedWhite" onClick={onFermer}>
         Fermer
       </Button>
     </div>

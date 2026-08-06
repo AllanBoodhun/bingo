@@ -107,7 +107,7 @@ Le créateur peut dupliquer une grille existante pour créer une nouvelle grille
 Le créateur peut lancer une partie à partir d'une grille validée (pool de phrases complet). Réalise UJ-1.
 
 **Conséquences (testables) :**
-- Une fois qu'une partie a été lancée à partir d'une grille, la taille de cette grille ne peut plus être modifiée (le texte des phrases reste modifiable, voir FR-3).
+- La grille (taille et texte des phrases) reste modifiable à tout moment, qu'une partie ait déjà été lancée ou non (parité totale avec FR-3, qui autorisait déjà l'édition du texte des phrases à tout moment). Les cases déjà distribuées aux joueurs d'une partie en cours ne sont pas affectées rétroactivement par ces modifications.
 
 #### FR-6 : Distribution aléatoire des phrases
 

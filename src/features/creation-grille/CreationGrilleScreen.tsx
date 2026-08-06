@@ -323,12 +323,13 @@ function ComposerPhrases({
   const [supprimantPhraseIds, setSupprimantPhraseIds] = useState<Set<string>>(
     new Set(),
   );
-  // Échec sûr par défaut : tant que la vérification serveur n'a pas confirmé qu'aucune
-  // Partie n'existe pour cette grille, on suppose qu'une existe (chips de taille masqués)
-  // plutôt que de risquer d'afficher un contrôle qui échouerait silencieusement (le
-  // trigger empecher_modification_taille_si_partie_lancee bloque de toute façon la
-  // modification côté serveur, mais autant ne jamais l'exposer dans ce cas).
+  // Sert uniquement au libellé du bouton de lancement ("Relancer" vs "Lancer la
+  // Partie") : la modification de la grille (taille, phrases) est autorisée à tout
+  // moment, qu'une partie ait déjà été lancée ou non.
   const [partieDejaLancee, setPartieDejaLancee] = useState(true);
+  const [partieEnCours, setPartieEnCours] = useState(false);
+  const [avertissementPartieEnCoursConfirme, setAvertissementPartieEnCoursConfirme] =
+    useState(false);
   const [dupliquantPending, setDupliquantPending] = useState(false);
   const [supprimantPending, setSupprimantPending] = useState(false);
   const [demandeSuppression, setDemandeSuppression] = useState(false);
@@ -342,12 +343,14 @@ function ComposerPhrases({
     setChargement(true);
     setChargementEchoue(false);
     setPhrases([]);
+    setAvertissementPartieEnCoursConfirme(false);
 
     async function charger() {
       try {
-        const [phrasesResult, partiesResult] = await Promise.all([
+        const [phrasesResult, partiesResult, partiesEnCoursResult] = await Promise.all([
           phrasesService.listerPhrasesDeGrille(grille.id),
           partiesService.existePartiePourGrille(grille.id),
+          partiesService.listerPartiesEnCoursParGrilles([grille.id]),
         ]);
 
         if (ignore) return;
@@ -361,9 +364,16 @@ function ComposerPhrases({
 
         // Dégradation silencieuse en cas d'échec de cette vérification secondaire (même
         // principe que les requêtes secondaires de GrilleEnDirecteScreen) : on garde le
-        // défaut sûr `true` (chips masqués) plutôt que de bloquer tout l'écran pour ça.
+        // défaut sûr `true` (libellé "Relancer") plutôt que de bloquer tout l'écran pour ça.
         if (!partiesResult.error) {
           setPartieDejaLancee((partiesResult.data?.length ?? 0) > 0);
+        }
+
+        // Ici le défaut sûr en cas d'échec est `false` (pas d'avertissement) : cette
+        // vérification ne fait que déclencher une modale d'avertissement non bloquante,
+        // pas une restriction — pas la peine de gêner l'utilisateur pour ça.
+        if (!partiesEnCoursResult.error) {
+          setPartieEnCours((partiesEnCoursResult.data?.length ?? 0) > 0);
         }
       } catch {
         if (!ignore) {
@@ -724,24 +734,22 @@ function ComposerPhrases({
         />
       </div>
 
-      {!partieDejaLancee && (
-        <div className="size-chips">
-          {TAILLES.map((n) => (
-            <button
-              key={n}
-              type="button"
-              className={["size-chip", taille === n ? "size-chip--active" : ""]
-                .filter(Boolean)
-                .join(" ")}
-              aria-pressed={taille === n}
-              disabled={taillePending}
-              onClick={() => handleChangerTaille(n)}
-            >
-              {n}×{n} - {n * n} phrases
-            </button>
-          ))}
-        </div>
-      )}
+      <div className="size-chips">
+        {TAILLES.map((n) => (
+          <button
+            key={n}
+            type="button"
+            className={["size-chip", taille === n ? "size-chip--active" : ""]
+              .filter(Boolean)
+              .join(" ")}
+            aria-pressed={taille === n}
+            disabled={taillePending}
+            onClick={() => handleChangerTaille(n)}
+          >
+            {n}×{n} - {n * n} phrases
+          </button>
+        ))}
+      </div>
       <div className="creation-grille-screen__phrase-container">
         <div className="creation-grille-screen__phrase-title">
           {complete && (
@@ -792,22 +800,20 @@ function ComposerPhrases({
                 >
                   {phrase.texte}
                 </span>
-                {!partieDejaLancee && (
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    color="filledBlack"
-                    className="phrase-list__supprimer"
-                    aria-label={`Supprimer la phrase "${phrase.texte}"`}
-                    disabled={supprimantPhraseIds.has(phrase.id)}
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      handleSupprimerPhrase(phrase.id);
-                    }}
-                  >
-                    Supprimer
-                  </Button>
-                )}
+                <Button
+                  type="button"
+                  variant="secondary"
+                  color="filledBlack"
+                  className="phrase-list__supprimer"
+                  aria-label={`Supprimer la phrase "${phrase.texte}"`}
+                  disabled={supprimantPhraseIds.has(phrase.id)}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    handleSupprimerPhrase(phrase.id);
+                  }}
+                >
+                  Supprimer
+                </Button>
               </li>
             ),
           )}
@@ -865,6 +871,16 @@ function ComposerPhrases({
           confirmEnCours={supprimantPending}
           onConfirm={handleSupprimer}
           onCancel={() => setDemandeSuppression(false)}
+        />
+      )}
+
+      {partieEnCours && !avertissementPartieEnCoursConfirme && (
+        <ConfirmDialog
+          titre="Partie en cours"
+          message="Il y a une partie en cours sur cette grille. Êtes-vous sûr de vouloir modifier ?"
+          confirmLabel="Modifier quand même"
+          onConfirm={() => setAvertissementPartieEnCoursConfirme(true)}
+          onCancel={onRetourBibliotheque}
         />
       )}
     </main>

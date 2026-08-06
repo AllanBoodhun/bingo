@@ -184,7 +184,13 @@ export function GridCell({ caseItem, onToggle, disabled }: GridCellProps) {
       <button
         ref={boutonRef}
         type="button"
-        className={['grid-cell', enAppui ? 'grid-cell--en-appui' : ''].filter(Boolean).join(' ')}
+        className={[
+          'grid-cell',
+          enAppui ? 'grid-cell--en-appui' : '',
+          caseItem.checked ? 'grid-cell--checked' : '',
+        ]
+          .filter(Boolean)
+          .join(' ')}
         style={style}
         aria-pressed={caseItem.checked}
         disabled={disabled}
@@ -195,7 +201,6 @@ export function GridCell({ caseItem, onToggle, disabled }: GridCellProps) {
         onPointerCancel={annulerAppui}
       >
         <span ref={texteRef} className="grid-cell__texte">{caseItem.phrases?.texte}</span>
-        {caseItem.checked && <span className="grid-cell__coche">✓</span>}
       </button>
       {bulleOuverte &&
         createPortal(

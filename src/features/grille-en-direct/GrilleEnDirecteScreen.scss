@@ -51,7 +51,7 @@
      `.grid-cell--en-appui` ci-dessous puisse surcharger uniquement le scale sans
      jamais perdre la rotation propre à la case. */
   transform: rotate(var(--grid-cell-rotation, 0deg)) scale(1);
-  transition: transform 450ms ease;
+  transition: transform 450ms ease, background-color 200ms ease, border-color 200ms ease;
 }
 
 .grid-cell:disabled {
@@ -112,14 +112,31 @@
   line-height: var(--text-body-sm-line-height);
 }
 
-.grid-cell__coche {
-  position: absolute;
-  top: 4px;
-  right: 6px;
-  color: var(--color-terracotta);
-  font-weight: 700;
-  font-size: 16px;
-  line-height: 1;
+/* Case cochée : bascule pleine ink plutôt qu'une coche superposée (Spec Change Log) —
+   le remplissage suffit à signaler l'état, et laisse le texte de la case lisible sans
+   élément supplémentaire à positionner par-dessus. Le "pop" façon tampon ne joue qu'à
+   la coche (l'animation est portée par la classe, retirée par React au décochage) et
+   compose sa propre échelle par-dessus la rotation de la case comme `--en-appui`. */
+.grid-cell--checked {
+  background: var(--color-ink);
+  border-color: var(--color-ink);
+  animation: grid-cell-check-pop 380ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.grid-cell--checked .grid-cell__texte {
+  color: var(--color-paper-card);
+}
+
+@keyframes grid-cell-check-pop {
+  0% {
+    transform: rotate(var(--grid-cell-rotation, 0deg)) scale(0.88);
+  }
+  60% {
+    transform: rotate(var(--grid-cell-rotation, 0deg)) scale(1.07);
+  }
+  100% {
+    transform: rotate(var(--grid-cell-rotation, 0deg)) scale(1);
+  }
 }
 
 .grille-en-direct-screen__header {
@@ -351,7 +368,7 @@
 .vainqueur-overlay {
   position: fixed;
   left: 50%;
-  top: var(--space-5);
+  top: var(--space-7);
   transform: translateX(-50%) rotate(0.4deg);
   z-index: 1;
   background: var(--color-paper-card);

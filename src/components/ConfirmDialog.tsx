@@ -42,12 +42,13 @@ export function ConfirmDialog({
         </p>
         <p className="confirm-dialog__message">{message}</p>
         <div className="confirm-dialog__actions">
-          <Button type="button" variant="secondary" disabled={confirmEnCours} onClick={onCancel}>
-            {cancelLabel}
-          </Button>
-          <Button type="button" variant="close-game" disabled={confirmEnCours} onClick={onConfirm}>
+          <Button type="button" variant="secondary" color='filledRed' disabled={confirmEnCours} onClick={onConfirm}>
             {confirmLabel}
           </Button>
+          <Button type="button" variant="secondary" color='outlinedWhite' disabled={confirmEnCours} onClick={onCancel}>
+            {cancelLabel}
+          </Button>
+
         </div>
       </div>
     </div>

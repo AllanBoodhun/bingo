@@ -1,10 +1,11 @@
 .auth-screen {
   max-width: 360px;
+  height: 100vh;
   margin: 0 auto;
   padding: var(--space-6) var(--space-screen-margin);
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--space-5);
 }
 
 .auth-screen__title {
@@ -54,5 +55,5 @@
 }
 
 .auth-screen__form .cta-primary {
-  margin-top: var(--space-2);
+  margin-top: var(--space-5);
 }

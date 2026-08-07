@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { obtenirSession, inscrire, connecter, nettoyerJoueursInvite } from '../../services/auth.service'
 import { Button } from '../../components/Button'
+import { BrandMark } from '../../components/BrandMark'
 import './AuthScreen.scss'
 
 type Mode = 'login' | 'signup'
@@ -75,10 +76,10 @@ export function AuthScreen() {
   }
 
   return (
-    <main className="auth-screen">
-      <h1 className="auth-screen__title">bingo</h1>
+    <main className="page auth-screen">
+      <BrandMark />
       <p className="auth-screen__subtitle">
-        {mode === 'signup' ? 'Crée ton compte pour sauvegarder tes grilles.' : 'Content de te revoir !'}
+       On s'en grille une ? 
       </p>
 
       <form className="auth-screen__form" onSubmit={handleSubmit}>
@@ -119,6 +120,7 @@ export function AuthScreen() {
       <Button
         type="button"
         variant="secondary"
+        color="outlinedWhite"
         disabled={pending}
         onClick={() => {
           setMode(mode === 'signup' ? 'login' : 'signup')
